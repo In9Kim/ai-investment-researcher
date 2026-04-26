@@ -1,11 +1,23 @@
 // services/researchService.js
 // Phase 2: 4인 AI 에이전트 멀티 분석 파이프라인
-// 흐름: 뉴스 수집 → 에이전트 병렬 분석 → HTML 포스팅 생성 → Google Sheets 저장 → 텔레그램 알림
+// 흐름: 뉴스 수집 → 에이전트 순차 분석(RPM 제한 회피) → HTML 포스팅 생성 → Google Sheets 저장 → 텔레그램 알림
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { appendResearchRow } = require('../lib/googleSheets');
 const { fetchLatestHeadlines, formatHeadlinesForAI } = require('./newsService');
 const { sendTelegramNotification } = require('./telegramService');
+
+// ── 유료 티어 설정 상수 ─────────────────────────────────────
+// Why: gemini-2.0-flash — 유료 티어 기준 고성능 모델, 높은 RPM·컨텍스트 지원
+const GEMINI_MODEL_NAME = 'gemini-2.0-flash';
+
+// Why: 유료 티어에서는 쿼터 여유가 충분 → API 안정성 확보를 위한 최소 지연만 유지
+const AGENT_CALL_DELAY_MS = 3_000;
+
+// Why: 무한 호출 방지를 위해 maxRetries 3으로 제한 (비용 통제)
+//      유료 티어는 회복이 빠르므로 rateLimit 기본 대기를 10초로 단축
+const RETRY_BASE_DELAY_BY_ERROR = { rateLimit: 10_000, serverError: 2_000 };
+const RETRY_MAX_ATTEMPTS = 3;
 
 // ── Gemini 클라이언트 ─────────────────────────────────────────
 
@@ -16,7 +28,7 @@ function getGeminiModel() {
     throw new Error('GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.');
   }
   const genAI = new GoogleGenerativeAI(apiKey);
-  return genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite-preview' });
+  return genAI.getGenerativeModel({ model: GEMINI_MODEL_NAME });
 }
 
 // ── Agent Personas (agents.md 기반) ──────────────────────────
@@ -32,7 +44,12 @@ const AGENT_PROMPTS = {
 - 전문 용어는 쓰되 반드시 한 줄 설명을 붙여주세요
 - 독자에게 직접 말하는 느낌으로 ("여러분", "지금 이게 왜 중요하냐면요")
 
-다음 뉴스 헤드라인을 당신의 관점에서 3~4문장으로 분석하세요.
+분석 요구사항:
+- 현재 Fed 정책 사이클(긴축/완화)에서 이 뉴스가 갖는 의미를 구체적으로 설명
+- 금리·CPI·고용·달러지수 중 이 뉴스와 직결되는 지표의 구체적 수치 또는 시나리오 포함
+- 개인 투자자의 포트폴리오(나스닥, 채권, 달러)에 미칠 실질적 파급 효과까지 연결
+
+다음 뉴스를 당신의 관점에서 심층 분석하세요. 헤드라인과 제공된 본문 내용을 모두 활용하여 3~4문장으로, 구체적 수치·시나리오를 포함한 전문 인사이트를 제공하세요.
 `.trim(),
 
   agentB_technical: `
@@ -45,7 +62,12 @@ const AGENT_PROMPTS = {
 - 구체적인 수치와 레벨을 반드시 포함 (예: "200일선 $XXX 붕괴 여부가 관건")
 - 확신에 찬 어조, 하지만 가끔 "이건 제 뇌피셜입니다" 같은 솔직함도 섞어주세요
 
-다음 뉴스 헤드라인이 기술적 지표에 미치는 영향을 3~4문장으로 분석하세요.
+분석 요구사항:
+- 이 뉴스로 인해 단기(1~5일) 가격 변동 가능성이 있는 핵심 기술적 레벨(지지선/저항선)을 구체적 수치로 제시
+- RSI, MACD, 거래량, 이동평균선 중 현재 시장에서 가장 중요한 지표와 해석 포함
+- 매수/매도 진입 타이밍 관련 힌트를 포함하되 면책 코멘트("뇌피셜")로 책임 회피
+
+다음 뉴스가 기술적 지표에 미치는 영향을 심층 분석하세요. 헤드라인과 본문 내용을 모두 활용하여 3~4문장으로, 구체적 수치 레벨과 단기 시나리오를 포함하세요.
 `.trim(),
 
   agentC_fundamental: `
@@ -55,10 +77,15 @@ const AGENT_PROMPTS = {
 
 말투 규칙:
 - 따뜻하고 설득력 있는 어조 ("이렇게 생각해보세요", "장기적으로 보면요")
-- EPS, PER 같은 수치는 반드시 언급하되, "이게 비싼 건지 싼 건지"로 해석해줄 것
+- EPS, PER, ROE, 자유현금흐름 같은 수치는 반드시 언급하되, "이게 비싼 건지 싼 건지"로 해석
 - 투자 결정에 도움이 되는 구체적인 포인트를 콕 집어주세요
 
-다음 뉴스 헤드라인을 기업 펀더멘털 관점에서 3~4문장으로 분석하세요.
+분석 요구사항:
+- 이 뉴스가 해당 기업(들)의 장기 경쟁 우위(해자)를 강화하는지 약화시키는지 판단
+- 관련 기업의 밸류에이션(PER, PBR 등) 관점에서 현재가 매력적인 진입 기회인지 평가
+- 장기 투자자(3~5년)가 취해야 할 행동 힌트(매수/홀드/관망)를 구체적 근거와 함께 제시
+
+다음 뉴스를 펀더멘털 관점에서 심층 분석하세요. 헤드라인과 본문 내용을 모두 활용하여 3~4문장으로, 구체적 재무지표와 장기 투자 인사이트를 포함하세요.
 `.trim(),
 
   // Why: Risk 에이전트는 낙관 편향에 빠진 독자를 흔들어 깨우는 역할 → 의도적으로 직설적·공포감 있게 설정
@@ -71,9 +98,14 @@ const AGENT_PROMPTS = {
 - 직설적이고 다소 무섭게 ("이거 진짜 위험합니다", "모르면 물립니다")
 - 구체적인 위기 시나리오를 숫자와 함께 제시 ("만약 ~라면 -XX% 급락 가능")
 - 독자가 긴장하게 만들되, 마지막엔 "그래서 이것만은 확인하세요"로 마무리
-- 상투적인 위험 나열 금지. 지금 이 뉴스에서 나올 수 있는 구체적 위험만 경고할 것
+- 상투적인 위험 나열 금지. 지금 이 뉴스에서 나올 수 있는 구체적 위험만 경고
 
-다음 뉴스 헤드라인에서 숨겨진 리스크를 3~4문장으로 경고하세요.
+분석 요구사항:
+- 이 뉴스가 연쇄적으로 유발할 수 있는 2차·3차 충격 시나리오를 구체적 수치(%하락, 섹터명)와 함께 제시
+- 시장이 현재 무시하고 있는 숨겨진 리스크 요인(Tail Risk) 1가지를 날카롭게 포착
+- 개인 투자자가 당장 취해야 할 방어 행동("이것만은 확인하세요")으로 마무리
+
+다음 뉴스에서 숨겨진 리스크를 심층 분석하세요. 헤드라인과 본문 내용을 모두 활용하여 3~4문장으로, 구체적 위기 시나리오와 수치를 포함해 경고하세요.
 `.trim(),
 };
 
@@ -220,6 +252,72 @@ NONE                           → 뉴스에서 가장 많이 언급된 섹터�
 [오늘 수집된 헤드라인]
 `.trim();
 
+// ── Utility ───────────────────────────────────────────────────
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ── Retry Helper ─────────────────────────────────────────────
+
+/**
+ * Gemini API 호출을 while 루프 기반 Exponential Backoff로 래핑 (최대 5회)
+ *
+ * @param {Object} model  - Gemini 모델 인스턴스
+ * @param {string} prompt - 전송할 프롬프트
+ * @param {string} label  - 디버깅용 호출 위치 레이블 (예: "agentA_macro")
+ *
+ * 재시도 대기 전략 (지수 증가):
+ *   - 429 Rate Limit : 30s → 60s → 120s → 240s → 종료
+ *   - 503 Server Error:  2s →  4s →   8s →  16s → 종료
+ */
+async function callGeminiWithRetry(model, prompt, label = 'unknown') {
+  let attempt = 0;
+
+  while (attempt < RETRY_MAX_ATTEMPTS) {
+    attempt++;
+    try {
+      return await model.generateContent(prompt);
+    } catch (error) {
+      const errorMsg = error.message ?? '';
+      const httpStatus = error.status ?? Number(errorMsg.match(/\b(429|503)\b/)?.[1] ?? 0);
+      const isRateLimit =
+        httpStatus === 429 ||
+        errorMsg.toLowerCase().includes('quota') ||
+        errorMsg.toLowerCase().includes('rate limit');
+      const isServerError =
+        httpStatus === 503 ||
+        errorMsg.includes('Service Unavailable') ||
+        errorMsg.includes('overloaded');
+
+      // 모델명 · 호출 위치 · HTTP 상태 · 에러 메시지 전체 로깅
+      console.error(
+        `❌ [${GEMINI_MODEL_NAME}] [${label}] 호출 실패 (시도 ${attempt}/${RETRY_MAX_ATTEMPTS})\n` +
+        `   HTTP ${httpStatus || 'N/A'} | ${errorMsg.slice(0, 200)}`
+      );
+
+      const canRetry = (isRateLimit || isServerError) && attempt < RETRY_MAX_ATTEMPTS;
+      if (canRetry) {
+        const baseDelay = isRateLimit
+          ? RETRY_BASE_DELAY_BY_ERROR.rateLimit
+          : RETRY_BASE_DELAY_BY_ERROR.serverError;
+        // 지수 증가: attempt 1 실패 시 baseDelay×1, 2회 실패 시 ×2, 3회 시 ×4 ...
+        const delayMs = baseDelay * Math.pow(2, attempt - 1);
+        const errorType = isRateLimit ? '429 Rate Limit' : '503 Server Error';
+
+        console.warn(
+          `⏳ [${GEMINI_MODEL_NAME}] ${errorType} — ${delayMs / 1000}초 후 재시도 (${attempt + 1}/${RETRY_MAX_ATTEMPTS}회)...`
+        );
+        await sleep(delayMs);
+        continue;
+      }
+
+      // 재시도 불가(4xx 등) 또는 최대 횟수 소진 → 상위로 전파
+      throw error;
+    }
+  }
+}
+
 /**
  * Gemini가 JSON을 markdown 코드블록으로 감싸는 경우를 대비한 정제 함수
  * Why: Gemini는 종종 ```json ... ``` 형태로 응답하여 JSON.parse()가 실패함
@@ -258,6 +356,25 @@ function parseFinalPostResponse(rawText) {
 }
 
 /**
+ * Gemini가 선택한 헤드라인 텍스트에 원본 스니펫을 매핑하여 분석 컨텍스트 강화
+ * Why: Gemini는 제목으로 뉴스를 선별하지만, 에이전트 분석은 본문 내용까지 활용해야 전문성 향상
+ */
+function enrichWithSnippets(selectedHeadlinesText, headlines) {
+  return selectedHeadlinesText
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const lineKey = line.toLowerCase().slice(0, 35);
+      const matched = headlines.find((h) => {
+        const titleKey = h.title.toLowerCase().slice(0, 35);
+        return titleKey.includes(lineKey.slice(0, 20)) || lineKey.includes(titleKey.slice(0, 20));
+      });
+      return matched?.snippet ? `${line}\n  [상세] ${matched.snippet}` : line;
+    })
+    .join('\n\n');
+}
+
+/**
  * 수집된 헤드라인에서 오늘의 카테고리·키워드·대표 뉴스를 자동 추출
  * 지정학적 리스크 수준에 따라 카테고리·키워드를 동적으로 결정
  *
@@ -266,10 +383,11 @@ function parseFinalPostResponse(rawText) {
  * @returns {Promise<{geopoliticalRiskLevel, category, keywords, selectedHeadlines, reason}>}
  */
 async function extractTodayKeywords(model, headlines) {
-  const headlineText = formatHeadlinesForAI(headlines.slice(0, 30));
+  // 제목 + 본문 스니펫을 포함한 상위 20건 전송 → Gemini가 Top 5~10 선별
+  const headlineText = formatHeadlinesForAI(headlines.slice(0, 20));
   const prompt = `${KEYWORD_EXTRACTION_PROMPT}\n\n${headlineText}`;
 
-  const result = await model.generateContent(prompt);
+  const result = await callGeminiWithRetry(model, prompt, 'keyword-extraction');
   const rawText = result.response.text();
 
   let parsed;
@@ -283,7 +401,10 @@ async function extractTodayKeywords(model, headlines) {
   const emoji = RISK_LEVEL_EMOJI[riskLevel] ?? '⚪';
   console.log(`${emoji} 지정학적 리스크 레벨: ${riskLevel}`);
 
-  return parsed;
+  // 선별된 헤드라인에 원본 스니펫을 매핑 → 에이전트 분석 깊이 향상
+  const enrichedHeadlines = enrichWithSnippets(parsed.selectedHeadlines, headlines);
+
+  return { ...parsed, selectedHeadlines: enrichedHeadlines };
 }
 
 // ── Private: 에이전트 실행 ───────────────────────────────────
@@ -295,31 +416,40 @@ async function extractTodayKeywords(model, headlines) {
  * @param {string} newsHeadlines   - 분석할 뉴스 헤드라인
  * @returns {Promise<string>}      - 에이전트 분석 텍스트
  */
-async function callAgent(model, agentPrompt, newsHeadlines) {
+async function callAgent(model, agentPrompt, newsHeadlines, agentName) {
   const fullPrompt = `${agentPrompt}\n\n[분석 대상 뉴스]\n${newsHeadlines}`;
-  const result = await model.generateContent(fullPrompt);
+  const result = await callGeminiWithRetry(model, fullPrompt, agentName);
   return result.response.text();
 }
 
 /**
- * 4인 에이전트 병렬 실행 → agentDebate 객체 반환
- * Why: Promise.all로 병렬 처리하여 순차 호출 대비 응답 시간을 ~3배 단축
+ * 4인 에이전트 순차 실행 → agentDebate 객체 반환  [Reduce 단계]
+ *
+ * Why: API 안정성 확보를 위해 호출 간 최소 지연(AGENT_CALL_DELAY_MS)을 유지.
+ *      각 에이전트는 3~4문장 심층 분석 — 뉴스 본문 스니펫까지 활용.
  */
 async function runMultiAgentDebate(model, newsHeadlines) {
-  const [macroAnalysis, technicalAnalysis, fundamentalAnalysis, riskAnalysis] =
-    await Promise.all([
-      callAgent(model, AGENT_PROMPTS.agentA_macro, newsHeadlines),
-      callAgent(model, AGENT_PROMPTS.agentB_technical, newsHeadlines),
-      callAgent(model, AGENT_PROMPTS.agentC_fundamental, newsHeadlines),
-      callAgent(model, AGENT_PROMPTS.agentD_risk, newsHeadlines),
-    ]);
+  const agentEntries = [
+    ['agentA_macro', AGENT_PROMPTS.agentA_macro],
+    ['agentB_technical', AGENT_PROMPTS.agentB_technical],
+    ['agentC_fundamental', AGENT_PROMPTS.agentC_fundamental],
+    ['agentD_risk', AGENT_PROMPTS.agentD_risk],
+  ];
 
-  return {
-    agentA_macro: macroAnalysis,
-    agentB_technical: technicalAnalysis,
-    agentC_fundamental: fundamentalAnalysis,
-    agentD_risk: riskAnalysis,
-  };
+  const debate = {};
+  for (let i = 0; i < agentEntries.length; i++) {
+    const [agentName, agentPrompt] = agentEntries[i];
+
+    if (i > 0) {
+      console.log(`   ⏳ API 안정성 대기 — ${AGENT_CALL_DELAY_MS / 1000}초...`);
+      await sleep(AGENT_CALL_DELAY_MS);
+    }
+
+    console.log(`   🤖 ${agentName} 심층 분석 중... (${i + 1}/${agentEntries.length})`);
+    debate[agentName] = await callAgent(model, agentPrompt, newsHeadlines, agentName);
+  }
+
+  return debate;
 }
 
 /**
@@ -332,7 +462,7 @@ async function generateFinalPost(model, agentDebate) {
     .join('\n\n');
 
   const fullPrompt = `${COORDINATOR_PROMPT}\n\n${debateSummary}`;
-  const result = await model.generateContent(fullPrompt);
+  const result = await callGeminiWithRetry(model, fullPrompt, 'coordinator');
   const rawText = result.response.text();
   return parseFinalPostResponse(rawText);
 }
@@ -342,7 +472,7 @@ async function generateFinalPost(model, agentDebate) {
 /**
  * 뉴스 분석 전체 파이프라인 실행
  *
- * Step 1) 4인 에이전트 Gemini 병렬 분석 → agentDebate JSON 생성
+ * Step 1) 4인 에이전트 순차 분석(RPM 제한 회피) → agentDebate 객체 생성
  * Step 2) Coordinator가 토론 종합 → HTML 블로그 본문 + 자동 선정 제목 생성
  * Step 3) Google Sheets(Apps Script Proxy)에 결과 저장
  *
@@ -359,9 +489,13 @@ async function analyzeAndSave({ newsHeadlines, category, keywords }) {
 
   const model = getGeminiModel();
 
-  console.log('🤖 [1/3] 4인 에이전트 병렬 분석 시작...');
+  console.log('🤖 [1/3] 4인 에이전트 심층 분석 시작...');
   const agentDebate = await runMultiAgentDebate(model, newsHeadlines);
   console.log('✅ 에이전트 토론 완료');
+
+  // 코디네이터 호출 전 API 안정성 대기
+  console.log(`   ⏳ API 안정성 대기 — ${AGENT_CALL_DELAY_MS / 1000}초...`);
+  await sleep(AGENT_CALL_DELAY_MS);
 
   console.log('✍️  [2/3] 최종 블로그 포스팅 생성 중...');
   const { title, summary, htmlContent } = await generateFinalPost(model, agentDebate);
@@ -388,7 +522,7 @@ async function analyzeAndSave({ newsHeadlines, category, keywords }) {
  *
  * Step 1) RSS 수집      → 최신 금융 뉴스 헤드라인 취득
  * Step 2) 키워드 추출   → Gemini가 오늘의 카테고리·키워드·대표 뉴스 자동 선별
- * Step 3) 에이전트 분석 → 4인 병렬 토론
+ * Step 3) 에이전트 분석 → 4인 순차 토론 (RPM 제한 회피)
  * Step 4) HTML 포스팅   → 제목 자동 선정 + 티스토리용 HTML 본문 생성
  * Step 5) 시트 저장     → Google Sheets(Apps Script Proxy) 영구 저장
  * Step 6) 텔레그램 알림 → 제목·요약·시트 링크 발송
@@ -399,7 +533,8 @@ async function runAutoWorkflow() {
   const model = getGeminiModel();
 
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('🚀 VibeCoding-IR 자동 분석 워크플로우 시작');
+  console.log('🚀 VibeCoding-IR 자동 분석 워크플로우 시작 (유료 티어)');
+  console.log(`   모델: ${GEMINI_MODEL_NAME} | 호출 간 지연: ${AGENT_CALL_DELAY_MS / 1000}s | 최대 재시도: ${RETRY_MAX_ATTEMPTS}회`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   // Step 1: 뉴스 수집
@@ -414,6 +549,7 @@ async function runAutoWorkflow() {
   console.log(`   선택 근거: ${reason}`);
 
   // Step 3~5: 에이전트 분석 + 포스팅 생성 + 시트 저장
+  console.log('🤖 [3/5] 에이전트 분석 + 포스팅 생성 + 시트 저장...');
   const result = await analyzeAndSave({
     newsHeadlines: selectedHeadlines,
     category,

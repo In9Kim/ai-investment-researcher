@@ -1,6 +1,6 @@
 // services/newsService.js
-// 미국 금융 뉴스 RSS 수집 서비스
-// 외부 API 키 없이 Google News + CNBC RSS를 무료로 활용
+// 미국 금융 뉴스 RSS 수집 서비스 — 제목 + 본문 스니펫 수집
+// 외부 API 키 없이 Google News + CNBC RSS를 활용
 
 const Parser = require('rss-parser');
 
@@ -46,6 +46,7 @@ async function fetchOneFeed(feed, maxItems) {
       pubDate: item.pubDate ?? item.isoDate ?? new Date().toISOString(),
       source: feed.name,
       link: item.link ?? '',
+      snippet: stripHtml(item.contentSnippet ?? item.content ?? '').slice(0, 400).trim(),
     }));
   } catch (error) {
     console.warn(`⚠️  RSS 수집 실패 (${feed.name}): ${error.message}`);
@@ -58,6 +59,11 @@ async function fetchOneFeed(feed, maxItems) {
  */
 function cleanTitle(title) {
   return title.replace(/\s-\s[^-]+$/, '').trim();
+}
+
+/** HTML 태그와 연속 공백을 제거하여 순수 텍스트 반환 */
+function stripHtml(text) {
+  return text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -101,13 +107,17 @@ async function fetchLatestHeadlines(maxItems = DEFAULT_MAX_ITEMS) {
 
 /**
  * 헤드라인 배열을 AI 프롬프트용 문자열로 변환
+ * 본문 스니펫이 있으면 함께 포함하여 분석 깊이를 높임
  * @param {Array} headlines - fetchLatestHeadlines 반환값
- * @returns {string} "- 제목 [출처]" 형식의 멀티라인 문자열
+ * @returns {string} 번호 + 제목 + 스니펫 형식의 멀티라인 문자열
  */
 function formatHeadlinesForAI(headlines) {
   return headlines
-    .map((h) => `- ${h.title} [${h.source}]`)
-    .join('\n');
+    .map((h, i) => {
+      const base = `${i + 1}. ${h.title} [${h.source}]`;
+      return h.snippet ? `${base}\n   ${h.snippet}` : base;
+    })
+    .join('\n\n');
 }
 
 module.exports = { fetchLatestHeadlines, formatHeadlinesForAI };
