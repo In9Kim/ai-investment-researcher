@@ -8,8 +8,8 @@ const { fetchLatestHeadlines, formatHeadlinesForAI } = require('./newsService');
 const { sendTelegramNotification } = require('./telegramService');
 
 // ── 유료 티어 설정 상수 ─────────────────────────────────────
-// Why: gemini-2.0-flash-exp — v1 정식 엔드포인트에서 사용 가능한 안정 실험 모델
-const GEMINI_MODEL_NAME = 'gemini-2.0-flash-exp';
+// Why: gemini-2.0-flash — v1 정식 엔드포인트에서 사용 가능한 안정 실험 모델
+const GEMINI_MODEL_NAME = 'gemini-2.0-flash';
 
 // Why: 유료 티어에서는 쿼터 여유가 충분 → API 안정성 확보를 위한 최소 지연만 유지
 const AGENT_CALL_DELAY_MS = 3_000;
