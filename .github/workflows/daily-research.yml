@@ -1,0 +1,37 @@
+name: 📊 Daily Investment Research
+
+on:
+  schedule:
+    # 매일 09:00 UTC = 18:00 KST (평일만 실행하려면 "0 9 * * 1-5" 로 변경)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    # 수동 실행 — GitHub Actions 탭에서 "Run workflow" 버튼으로 즉시 테스트 가능
+
+jobs:
+  research:
+    name: Run AI Research Pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run daily research workflow
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          APPS_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_URL }}
+          APPS_SCRIPT_SECRET_TOKEN: ${{ secrets.APPS_SCRIPT_SECRET_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GOOGLE_SHEETS_URL: ${{ secrets.GOOGLE_SHEETS_URL }}
+        run: node scripts/runDailyResearch.js

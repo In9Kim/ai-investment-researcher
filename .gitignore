@@ -1,0 +1,20 @@
+# 환경 변수 - 절대 커밋 금지
+.env
+.env.local
+.env*.local
+
+# 서비스 계정 키 파일 - 절대 커밋 금지
+*.json
+!package.json
+!package-lock.json
+
+# Next.js
+.next/
+out/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
