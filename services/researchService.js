@@ -8,8 +8,8 @@ const { fetchLatestHeadlines, formatHeadlinesForAI } = require('./newsService');
 const { sendTelegramNotification } = require('./telegramService');
 
 // ── 유료 티어 설정 상수 ─────────────────────────────────────
-// Why: gemini-2.0-flash — 유료 티어 기준 고성능 모델, 높은 RPM·컨텍스트 지원
-const GEMINI_MODEL_NAME = 'gemini-2.0-flash';
+// Why: gemini-2.0-flash-exp — v1 정식 엔드포인트에서 사용 가능한 안정 실험 모델
+const GEMINI_MODEL_NAME = 'gemini-2.0-flash-exp';
 
 // Why: 유료 티어에서는 쿼터 여유가 충분 → API 안정성 확보를 위한 최소 지연만 유지
 const AGENT_CALL_DELAY_MS = 3_000;
@@ -22,12 +22,13 @@ const RETRY_MAX_ATTEMPTS = 3;
 // ── Gemini 클라이언트 ─────────────────────────────────────────
 
 // 호출 시점에 생성하여 환경 변수 로딩을 보장
+// Why: apiVersion 'v1' 명시 — v1beta 기본값에서 일부 모델이 404를 뱉는 문제 방지
 function getGeminiModel() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.');
   }
-  const genAI = new GoogleGenerativeAI(apiKey);
+  const genAI = new GoogleGenerativeAI(apiKey, { apiVersion: 'v1' });
   return genAI.getGenerativeModel({ model: GEMINI_MODEL_NAME });
 }
 
