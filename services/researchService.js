@@ -10,7 +10,7 @@ const { sendTelegramNotification } = require('./telegramService');
 // ── 유료 티어 설정 상수 ─────────────────────────────────────
 // Why: models/ 전체 경로 지정 — SDK가 경로를 자동 조합할 때 잘못된 형식이 되는 경우를 방지
 // Why: gemini-1.5-flash — 1.5-pro보다 권한 제약이 적고 v1 엔드포인트에서 가장 범용적
-const GEMINI_MODEL_NAME = 'models/gemini-1.5-flash';
+const GEMINI_MODEL_NAME = 'models/gemini-2.5-flash';
 
 // Why: 유료 티어에서는 쿼터 여유가 충분 → API 안정성 확보를 위한 최소 지연만 유지
 const AGENT_CALL_DELAY_MS = 3_000;
