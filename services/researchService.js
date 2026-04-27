@@ -8,8 +8,9 @@ const { fetchLatestHeadlines, formatHeadlinesForAI } = require('./newsService');
 const { sendTelegramNotification } = require('./telegramService');
 
 // ── 유료 티어 설정 상수 ─────────────────────────────────────
-// Why: gemini-2.0-flash — v1 정식 엔드포인트에서 사용 가능한 안정 실험 모델
-const GEMINI_MODEL_NAME = 'gemini-2.0-flash';
+// Why: models/ 전체 경로 지정 — SDK가 경로를 자동 조합할 때 잘못된 형식이 되는 경우를 방지
+// Why: gemini-1.5-flash — 1.5-pro보다 권한 제약이 적고 v1 엔드포인트에서 가장 범용적
+const GEMINI_MODEL_NAME = 'models/gemini-1.5-flash';
 
 // Why: 유료 티어에서는 쿼터 여유가 충분 → API 안정성 확보를 위한 최소 지연만 유지
 const AGENT_CALL_DELAY_MS = 3_000;
@@ -22,14 +23,21 @@ const RETRY_MAX_ATTEMPTS = 3;
 // ── Gemini 클라이언트 ─────────────────────────────────────────
 
 // 호출 시점에 생성하여 환경 변수 로딩을 보장
-// Why: apiVersion 'v1' 명시 — v1beta 기본값에서 일부 모델이 404를 뱉는 문제 방지
+// Why: baseUrl 명시 — SDK 내부의 baseUrl 자동 조합 로직을 우회하여 호출 URL을 확정적으로 고정
+// Why: apiVersion 'v1' + baseUrl 조합 → 실제 호출 URL: {baseUrl}/v1/{model}:generateContent
 function getGeminiModel() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.');
   }
-  const genAI = new GoogleGenerativeAI(apiKey, { apiVersion: 'v1' });
-  return genAI.getGenerativeModel({ model: GEMINI_MODEL_NAME });
+  const genAI = new GoogleGenerativeAI(apiKey);
+  return genAI.getGenerativeModel(
+    { model: GEMINI_MODEL_NAME },
+    {
+      apiVersion: 'v1',
+      baseUrl: 'https://generativelanguage.googleapis.com',
+    }
+  );
 }
 
 // ── Agent Personas (agents.md 기반) ──────────────────────────
