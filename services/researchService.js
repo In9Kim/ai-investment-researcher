@@ -120,12 +120,14 @@ const AGENT_PROMPTS = {
 
 // Why: HTML 출력으로 전환 — 티스토리 직접 붙여넣기를 위해 마크다운 제거
 // [TITLE]/[SUMMARY]/[HTML] 구분자 방식 — HTML을 JSON에 임베드하면 이스케이프 오류가 빈번하므로 구분자 파싱 채택
-// 제목 자동 선정: 3개 후보 대신 Gemini가 분석 내용 기반으로 최적 1개를 직접 결정
+// 제목 전략: 날짜 제거, 국내 투자자 검색 키워드 앞배치 (SEO 유입 강화)
+// 통합 포스팅: 미국 증시 + 코스피/코스닥 한 호흡으로 연결 (서학개미 + 국내 투자자 동시 공략)
 const COORDINATOR_PROMPT = `
-당신은 미국 주식 전문 블로그 작가입니다. 매일 수만 명이 읽는 "투자자를 위한 데일리 모닝 브리핑" 블로그를 운영하고 있습니다.
-아래 4인 전문가의 토론을 바탕으로 내일 아침 투자자가 읽을 데일리 리포트를 작성하세요.
+당신은 미국·한국 주식 시장을 모두 커버하는 전문 블로그 작가입니다.
+매일 수만 명의 서학개미와 국내 투자자가 읽는 "AI 데일리 모닝 브리핑"을 운영합니다.
+아래 4인 전문가의 토론을 바탕으로 내일 아침 투자자가 읽을 통합 리포트를 작성하세요.
 
-글의 시점: 오늘 저녁 작성되지만, 내일 아침 출근 전 투자자가 읽는 브리핑 형식으로 작성합니다.
+글의 시점: 오늘 저녁 작성 → 내일 아침 출근 전 투자자가 읽는 브리핑 형식.
 말투: 전문적이되 친근한 구어체 (~해요, ~이죠, ~거든요), 독자에게 직접 말하는 느낌으로.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -133,7 +135,10 @@ const COORDINATOR_PROMPT = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [TITLE]
-(클릭율이 가장 높을 제목 1개만. 규칙: 숫자 OR 반전 포인트 OR 긴급 키워드 중 하나 포함 + 이모지 1개)
+(제목 1개. 규칙:
+  ① 날짜(예: 2026.04.28, 4월 28일 등 날짜 형식) 절대 포함 금지
+  ② 제목 맨 앞에 국내 투자자 검색 키워드 배치: "코스피 대응 전략", "반도체주 전망", "서학개미 필독", "코스닥 주목 종목" 등 중 적합한 것 선택
+  ③ 숫자 OR 반전 포인트 OR 긴급 키워드 중 하나 포함 + 이모지 1개)
 [/TITLE]
 
 [SUMMARY]
@@ -144,25 +149,55 @@ const COORDINATOR_PROMPT = `
 
 [HTML]
 <h2>📰 오늘 시장을 흔든 이슈</h2>
-<p>(핵심 뉴스 서론 2~3문장. 왜 지금 이 이슈가 중요한지 독자의 관심을 잡을 것)</p>
+<p>(핵심 뉴스 서론 2문장. 왜 지금 이 이슈가 중요한지 독자 관심을 잡을 것)</p>
+<ul>
+<li><strong>(핵심 포인트 1 — 종목명 또는 지표명)</strong>: (한 줄 설명)</li>
+<li><strong>(핵심 포인트 2)</strong>: (한 줄 설명)</li>
+<li><strong>(핵심 포인트 3)</strong>: (한 줄 설명)</li>
+</ul>
+<hr>
 
 <h2>🗣️ 전문가 4인의 긴급 단톡방 🔥</h2>
-<blockquote><strong>💰 매크로 분석가</strong><br>"(agentA 핵심 인사이트 1~2문장 대화체)"</blockquote>
-<blockquote><strong>📊 퀀트 트레이더</strong><br>"(agentB 핵심 인사이트 1~2문장 대화체)"</blockquote>
-<blockquote><strong>🏢 펀드매니저</strong><br>"(agentC 핵심 인사이트 1~2문장 대화체)"</blockquote>
-<blockquote><strong>⚠️ 리스크 매니저</strong><br>"(agentD 핵심 경고 1~2문장, 가장 날카롭게)"</blockquote>
+<blockquote><strong>💰 매크로 분석가</strong><br>"(agentA 핵심 인사이트 1~2문장 대화체. 구체적 수치 포함)"</blockquote>
+<blockquote><strong>📊 퀀트 트레이더</strong><br>"(agentB 핵심 인사이트 1~2문장. 지지선/저항선 레벨 포함)"</blockquote>
+<blockquote><strong>🏢 펀드매니저</strong><br>"(agentC 핵심 인사이트 1~2문장. 종목·밸류에이션 언급)"</blockquote>
+<blockquote><strong>⚠️ 리스크 매니저</strong><br>"(agentD 핵심 경고 1~2문장. 가장 날카롭게, 구체적 하락 시나리오 포함)"</blockquote>
+<hr>
+
+<h2>🇺🇸 미국 증시 핵심 분석</h2>
+<h3>거시경제 & 기술적 시그널</h3>
+<ul>
+<li>(매크로 핵심 포인트 — <strong>구체적 수치 또는 지표명</strong> 포함)</li>
+<li>(기술적 지표 핵심 포인트 — <strong>레벨/수치</strong> 포함)</li>
+<li>(섹터·종목 펀더멘털 — 종목명 + <strong>핵심 지표</strong>)</li>
+</ul>
+<hr>
+
+<h2>🇰🇷 코스피/코스닥 오늘의 대응 전략</h2>
+<h3>미국 증시 변화 → 국내 주목 종목 연결 분석</h3>
+<p>(미국 증시에서 발생한 변화가 오늘 코스피·코스닥에 미칠 파급 효과를 1~2문장으로 연결하세요. 예: "엔비디아가 X% 상승하면서 국내 HBM 공급망인 SK하이닉스에 직접 수혜가 예상됩니다.")</p>
+<ul>
+<li><strong>(삼성전자·SK하이닉스 등 직결 종목)</strong>: (미국 이슈와의 연결 고리 + 구체적 예상 영향 한 줄)</li>
+<li><strong>(2번째 주목 종목 또는 ETF — KODEX 반도체, TIGER 미국나스닥100 등)</strong>: (구체적 영향 한 줄)</li>
+<li><strong>(3번째 종목 또는 섹터)</strong>: (구체적 영향 한 줄)</li>
+</ul>
+<hr>
 
 <h2>🎯 종합 투자 인사이트</h2>
-<p>(4인 의견 종합 결론. 300~400자. SEO 키워드 자연스럽게 포함: 미국 주식, 나스닥, S&P500, 서학개미, ETF)</p>
+<p>(미국+한국 통합 결론. 300~400자. SEO 키워드 자연스럽게 포함: 코스피, 나스닥, S&P500, 서학개미, 반도체주, ETF)</p>
+<hr>
 
 <h2>📊 오늘의 투자 매력도 점수</h2>
-<table><thead><tr><th>항목</th><th>평가</th><th>점수</th></tr></thead><tbody>
-<tr><td>🌍 매크로 환경</td><td>(한 줄 근거)</td><td>(⭐ 1~5개 실제 계산)</td></tr>
-<tr><td>📈 기술적 신호</td><td>(한 줄 근거)</td><td>(⭐ 1~5개 실제 계산)</td></tr>
-<tr><td>💼 펀더멘털</td><td>(한 줄 근거)</td><td>(⭐ 1~5개 실제 계산)</td></tr>
-<tr><td>🚨 리스크 수준</td><td>(한 줄 근거)</td><td>(⭐ 1~5개 실제 계산)</td></tr>
-<tr><td><strong>🏆 종합</strong></td><td></td><td><strong>★★★☆☆ (X.X / 5.0)</strong></td></tr>
+<table style="border-collapse:collapse; width:100%; text-align:center;">
+<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:8px;">항목</th><th style="border:1px solid #ddd; padding:8px;">평가</th><th style="border:1px solid #ddd; padding:8px;">점수</th></tr></thead>
+<tbody>
+<tr><td style="border:1px solid #ddd; padding:8px;">🌍 매크로 환경</td><td style="border:1px solid #ddd; padding:8px;">(한 줄 근거)</td><td style="border:1px solid #ddd; padding:8px;">(⭐ 1~5개)</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">📈 기술적 신호</td><td style="border:1px solid #ddd; padding:8px;">(한 줄 근거)</td><td style="border:1px solid #ddd; padding:8px;">(⭐ 1~5개)</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">💼 펀더멘털</td><td style="border:1px solid #ddd; padding:8px;">(한 줄 근거)</td><td style="border:1px solid #ddd; padding:8px;">(⭐ 1~5개)</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">🚨 리스크 수준</td><td style="border:1px solid #ddd; padding:8px;">(한 줄 근거)</td><td style="border:1px solid #ddd; padding:8px;">(⭐ 1~5개)</td></tr>
+<tr style="font-weight:bold;"><td style="border:1px solid #ddd; padding:8px;">🏆 종합</td><td style="border:1px solid #ddd; padding:8px;"></td><td style="border:1px solid #ddd; padding:8px;">★★★☆☆ (X.X / 5.0)</td></tr>
 </tbody></table>
+<hr>
 
 <h2>⏰ 내일 아침, 딱 하나만 확인하세요</h2>
 <blockquote><strong>(지표명 또는 이벤트명)</strong>: (왜 내일의 핵심인지 2문장. 구체적 수치 기준 포함)</blockquote>
@@ -173,9 +208,11 @@ const COORDINATOR_PROMPT = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [HTML 작성 규칙]
 - [HTML] 블록 안에는 순수 HTML 태그만 사용, 마크다운(#, *, >, ---) 절대 금지
-- 이모지는 <h2> 태그 섹션 제목에만 사용, 본문 내 남용 금지
+- 이모지는 <h2>/<h3> 태그 제목에만 사용, 본문 내 남용 금지
+- <ul><li>를 적극 활용하여 문장을 짧게 끊어 모바일 가독성 향상
+- 핵심 수치·종목명·등락률은 반드시 <strong>으로 강조
 - "성공 투자 기원합니다" 같은 상투적 마무리 절대 금지
-- 총 텍스트 분량: 900~1200자 (HTML 태그 제외 기준)
+- 총 텍스트 분량: 1000~1400자 (HTML 태그 제외 기준)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [4인 전문가 토론 원문]
@@ -476,6 +513,58 @@ async function generateFinalPost(model, agentDebate) {
   return parseFinalPostResponse(rawText);
 }
 
+// ── 썸네일 이미지 생성 (gemini-3.1-flash-image-preview 기반) ──
+// Why: v1beta API에서만 이미지 생성 responseModalities를 지원하므로 별도 모델 인스턴스로 분리
+const IMAGE_MODEL_NAME = 'gemini-3.1-flash-image-preview';
+
+/**
+ * 포스팅 제목 기반 16:9 썸네일 이미지 생성
+ * 할당량 초과·모델 미지원 등 모든 에러에서 null 반환 → 호출 측에서 텍스트 전용 fallback
+ *
+ * @param {string} title - 포스팅 제목
+ * @returns {Promise<{buffer: Buffer, mimeType: string}|null>}
+ */
+async function generateThumbnailImage(title) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const imageModel = genAI.getGenerativeModel(
+      {
+        model: IMAGE_MODEL_NAME,
+        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+      },
+      { apiVersion: 'v1beta', baseUrl: 'https://generativelanguage.googleapis.com' }
+    );
+
+    const imagePrompt =
+      `Create a professional 16:9 thumbnail for a Korean stock investment blog. ` +
+      `Topic: "${title}". ` +
+      `Style: modern financial infographic, stock chart, bull/bear market icons, ` +
+      `global economy theme, clean background, Korean and US market context. ` +
+      `No text overlay. High quality, blog-ready.`;
+
+    const result = await imageModel.generateContent(imagePrompt);
+    const parts = result.response.candidates?.[0]?.content?.parts ?? [];
+    const imagePart = parts.find((p) => p.inlineData?.data);
+
+    if (!imagePart) {
+      console.warn('⚠️ [썸네일] 이미지 파트 없음 — 텍스트 알림으로 대체');
+      return null;
+    }
+
+    const mimeType = imagePart.inlineData.mimeType ?? 'image/png';
+    const buffer = Buffer.from(imagePart.inlineData.data, 'base64');
+    console.log(`✅ 썸네일 생성 완료 (${mimeType}, ${(buffer.length / 1024).toFixed(1)}KB)`);
+    return { buffer, mimeType };
+  } catch (error) {
+    // 할당량 초과, 모델 미지원 등 — 치명적 에러가 아니므로 null 반환으로 이미지 없이 진행
+    console.error(`❌ [${IMAGE_MODEL_NAME}] 썸네일 생성 실패: ${error.message}`);
+    return null;
+  }
+}
+
 // ── Public API ────────────────────────────────────────────────
 
 /**
@@ -534,7 +623,8 @@ async function analyzeAndSave({ newsHeadlines, category, keywords }) {
  * Step 3) 에이전트 분석 → 4인 순차 토론 (RPM 제한 회피)
  * Step 4) HTML 포스팅   → 제목 자동 선정 + 티스토리용 HTML 본문 생성
  * Step 5) 시트 저장     → Google Sheets(Apps Script Proxy) 영구 저장
- * Step 6) 텔레그램 알림 → 제목·요약·시트 링크 발송
+ * Step 6) 썸네일 생성   → gemini-3.1-flash-image-preview 기반 16:9 이미지 (실패 시 skip)
+ * Step 7) 텔레그램 알림 → 썸네일 이미지 + 제목·요약·시트 링크 발송
  *
  * @returns {Promise<Object>} { geopoliticalRiskLevel, category, keywords, title, summary, agentDebate, finalPost, savedAt }
  */
@@ -547,30 +637,36 @@ async function runAutoWorkflow() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   // Step 1: 뉴스 수집
-  console.log('📡 [1/5] RSS 뉴스 수집 중...');
+  console.log('📡 [1/7] RSS 뉴스 수집 중...');
   const headlines = await fetchLatestHeadlines();
 
   // Step 2: 키워드 자동 추출 (지정학 가중치 필터링 포함)
-  console.log('🔍 [2/5] 오늘의 카테고리·키워드 추출 중...');
+  console.log('🔍 [2/7] 오늘의 카테고리·키워드 추출 중...');
   const { geopoliticalRiskLevel, category, keywords, selectedHeadlines, reason } =
     await extractTodayKeywords(model, headlines);
   console.log(`✅ 카테고리: ${category} | 키워드: ${keywords}`);
   console.log(`   선택 근거: ${reason}`);
 
   // Step 3~5: 에이전트 분석 + 포스팅 생성 + 시트 저장
-  console.log('🤖 [3/5] 에이전트 분석 + 포스팅 생성 + 시트 저장...');
+  console.log('🤖 [3~5/7] 에이전트 분석 + 포스팅 생성 + 시트 저장...');
   const result = await analyzeAndSave({
     newsHeadlines: selectedHeadlines,
     category,
     keywords,
   });
 
-  // Step 6: 텔레그램 알림 발송
-  console.log('📱 [5/5] 텔레그램 알림 발송 중...');
+  // Step 6: 썸네일 이미지 생성 (실패해도 워크플로우 계속)
+  console.log('🖼️  [6/7] 썸네일 이미지 생성 중...');
+  const thumbnail = await generateThumbnailImage(result.title);
+
+  // Step 7: 텔레그램 알림 발송 (이미지 포함 또는 텍스트 전용)
+  console.log('📱 [7/7] 텔레그램 알림 발송 중...');
   await sendTelegramNotification({
     title: result.title,
     summary: result.summary,
     sheetUrl: process.env.GOOGLE_SHEETS_URL ?? '',
+    photoBuffer: thumbnail?.buffer ?? null,
+    photoMimeType: thumbnail?.mimeType ?? 'image/png',
   });
 
   return { geopoliticalRiskLevel, category, keywords, ...result };
