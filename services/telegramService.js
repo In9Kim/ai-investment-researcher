@@ -62,22 +62,19 @@ async function sendTelegramPhoto({ botToken, chatId, photoBuffer, photoMimeType,
 }
 
 /**
- * 텔레그램 채널/DM으로 데일리 리포트 완성 알림 발송
- * photoBuffer가 있으면 sendPhoto, 없거나 실패하면 sendMessage로 자동 fallback
+ * 텔레그램 채널/DM으로 데일리 리포트 완성 알림 발송 (텍스트 전용)
  *
  * @param {Object} params
- * @param {string}      params.title        - Gemini가 자동 선정한 포스팅 제목
- * @param {string}      params.summary      - 🔴🟡🟢 3줄 요약 (plain text)
- * @param {string}      params.sheetUrl     - Google Sheets URL
- * @param {Buffer|null} params.photoBuffer  - 썸네일 이미지 Buffer (없으면 null)
- * @param {string}      params.photoMimeType - 이미지 MIME 타입 (기본: image/png)
+ * @param {string} params.title         - Gemini가 자동 선정한 포스팅 제목
+ * @param {string} params.summary       - 🔴🟡🟢 3줄 요약 (plain text)
+ * @param {string} params.koreanStocks  - 핵심 국내 종목 3개 요약 (plain text, 줄바꿈 구분)
+ * @param {string} params.sheetUrl      - Google Sheets URL
  */
 async function sendTelegramNotification({
   title,
   summary,
+  koreanStocks = '',
   sheetUrl,
-  photoBuffer = null,
-  photoMimeType = 'image/png',
 }) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -98,6 +95,10 @@ async function sendTelegramNotification({
     ? `🔗 <a href="${sheetUrl}">시트에서 HTML 복사하기</a>`
     : '🔗 시트 링크 미설정 (GOOGLE_SHEETS_URL 환경 변수 확인)';
 
+  const koreanStocksSection = koreanStocks
+    ? [``, `🇰🇷 <b>오늘 주목할 국내 종목 TOP 3</b>`, escapeHtml(koreanStocks)]
+    : [];
+
   const messageText = [
     `📊 <b>VibeCoding-IR 데일리 리포트 완성!</b>`,
     `📅 ${today}`,
@@ -107,6 +108,7 @@ async function sendTelegramNotification({
     ``,
     `💡 <b>핵심 요약</b>`,
     escapeHtml(summary),
+    ...koreanStocksSection,
     ``,
     linkLine,
     ``,
@@ -114,25 +116,10 @@ async function sendTelegramNotification({
   ].join('\n');
 
   try {
-    if (photoBuffer) {
-      await sendTelegramPhoto({ botToken, chatId, photoBuffer, photoMimeType, caption: messageText });
-    } else {
-      await sendTelegramMessage({ botToken, chatId, text: messageText });
-    }
+    await sendTelegramMessage({ botToken, chatId, text: messageText });
     console.log('✅ 텔레그램 알림 발송 완료');
-  } catch (primaryError) {
-    // 이미지 발송 실패 시 텍스트 전용으로 재시도
-    if (photoBuffer) {
-      console.warn(`⚠️ 이미지 발송 실패 (${primaryError.message}) — 텍스트 알림으로 대체`);
-      try {
-        await sendTelegramMessage({ botToken, chatId, text: messageText });
-        console.log('✅ 텔레그램 텍스트 알림 발송 완료 (이미지 fallback)');
-      } catch (fallbackError) {
-        throw new Error(`텔레그램 알림 최종 실패: ${fallbackError.message}`);
-      }
-    } else {
-      throw primaryError;
-    }
+  } catch (error) {
+    throw new Error(`텔레그램 알림 최종 실패: ${error.message}`);
   }
 }
 

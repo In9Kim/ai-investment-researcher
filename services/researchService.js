@@ -136,9 +136,13 @@ const COORDINATOR_PROMPT = `
 
 [TITLE]
 (제목 1개. 규칙:
-  ① 날짜(예: 2026.04.28, 4월 28일 등 날짜 형식) 절대 포함 금지
-  ② 제목 맨 앞에 국내 투자자 검색 키워드 배치: "코스피 대응 전략", "반도체주 전망", "서학개미 필독", "코스닥 주목 종목" 등 중 적합한 것 선택
-  ③ 숫자 OR 반전 포인트 OR 긴급 키워드 중 하나 포함 + 이모지 1개)
+  ① 날짜(예: 2026.04.28, 4월 28일 등) 절대 포함 금지
+  ② 제목 맨 앞에 반드시 대괄호 키워드 배치 — 오늘 뉴스와 가장 직결된 것 선택:
+     [코스피 대응] / [삼성전자] / [SK하이닉스] / [엔비디아] / [나스닥] / [반도체주] / [코스닥]
+  ③ 이어서 유저의 궁금증·공포·탐욕을 자극하는 구어체 문구:
+     "왜 떨어졌나?" / "지금 사도 될까?" / "긴급 진단" / "폭락 전에 봐야 할" / "다음 목표가는?" / "지금 사면 늦었을까?"
+  ④ 이모지 1개 포함
+  예시: [삼성전자] 오늘 왜 급락했나? 반도체 긴급 진단 🔥 / [나스닥] 지금 사도 될까? 투자자 필수 체크 📊)
 [/TITLE]
 
 [SUMMARY]
@@ -147,6 +151,13 @@ const COORDINATOR_PROMPT = `
 🟢 (기회 한 줄 — 가장 긍정적인 투자 신호)
 [/SUMMARY]
 
+[KOREAN_STOCKS]
+(오늘 미국 증시 이슈와 직결된 국내 핵심 종목 3개. 반드시 삼성전자·SK하이닉스 등 반도체 대형주를 1개 이상 포함. 아래 형식으로 줄바꿈 구분, 번호·기호 없이 텍스트만)
+종목명1: 미국 이슈 연결 고리 + 오늘 예상 영향 한 줄
+종목명2: 미국 이슈 연결 고리 + 오늘 예상 영향 한 줄
+종목명3: 미국 이슈 연결 고리 + 오늘 예상 영향 한 줄
+[/KOREAN_STOCKS]
+
 [HTML]
 <h2>📰 오늘 시장을 흔든 이슈</h2>
 <p>(핵심 뉴스 서론 2문장. 왜 지금 이 이슈가 중요한지 독자 관심을 잡을 것)</p>
@@ -154,6 +165,16 @@ const COORDINATOR_PROMPT = `
 <li><strong>(핵심 포인트 1 — 종목명 또는 지표명)</strong>: (한 줄 설명)</li>
 <li><strong>(핵심 포인트 2)</strong>: (한 줄 설명)</li>
 <li><strong>(핵심 포인트 3)</strong>: (한 줄 설명)</li>
+</ul>
+<hr>
+
+<h2>🇰🇷 오늘 국장(코스피/코스닥) 직접 영향 — 지금 당장 봐야 할 종목</h2>
+<h3>미국 증시 이슈 → 국내 종목 즉시 연결 분석</h3>
+<p>(미국 증시 핵심 이슈가 오늘 코스피·코스닥에 미칠 파급 효과를 1~2문장으로 연결. 삼성전자·SK하이닉스 등 반도체주를 반드시 언급. 예: "엔비디아가 X% 상승하면서 HBM 공급망인 <strong>삼성전자</strong>와 <strong>SK하이닉스</strong>에 직접 수혜가 예상됩니다.")</p>
+<ul>
+<li><strong>삼성전자 또는 SK하이닉스 (반드시 포함)</strong>: (미국 이슈 연결 고리 + 구체적 예상 영향, 삼성전자 키워드 자연스럽게 포함)</li>
+<li><strong>(2번째 주목 종목 또는 ETF — KODEX 반도체, TIGER 미국나스닥100 등)</strong>: (구체적 영향 한 줄)</li>
+<li><strong>(3번째 종목 또는 섹터)</strong>: (구체적 영향 한 줄)</li>
 </ul>
 <hr>
 
@@ -170,16 +191,6 @@ const COORDINATOR_PROMPT = `
 <li>(매크로 핵심 포인트 — <strong>구체적 수치 또는 지표명</strong> 포함)</li>
 <li>(기술적 지표 핵심 포인트 — <strong>레벨/수치</strong> 포함)</li>
 <li>(섹터·종목 펀더멘털 — 종목명 + <strong>핵심 지표</strong>)</li>
-</ul>
-<hr>
-
-<h2>🇰🇷 코스피/코스닥 오늘의 대응 전략</h2>
-<h3>미국 증시 변화 → 국내 주목 종목 연결 분석</h3>
-<p>(미국 증시에서 발생한 변화가 오늘 코스피·코스닥에 미칠 파급 효과를 1~2문장으로 연결하세요. 예: "엔비디아가 X% 상승하면서 국내 HBM 공급망인 SK하이닉스에 직접 수혜가 예상됩니다.")</p>
-<ul>
-<li><strong>(삼성전자·SK하이닉스 등 직결 종목)</strong>: (미국 이슈와의 연결 고리 + 구체적 예상 영향 한 줄)</li>
-<li><strong>(2번째 주목 종목 또는 ETF — KODEX 반도체, TIGER 미국나스닥100 등)</strong>: (구체적 영향 한 줄)</li>
-<li><strong>(3번째 종목 또는 섹터)</strong>: (구체적 영향 한 줄)</li>
 </ul>
 <hr>
 
@@ -386,6 +397,7 @@ const RISK_LEVEL_EMOJI = { HIGH: '🔴', MEDIUM: '🟠', LOW: '🟡', NONE: '⚪
 function parseFinalPostResponse(rawText) {
   const titleMatch = rawText.match(/\[TITLE\]([\s\S]*?)\[\/TITLE\]/);
   const summaryMatch = rawText.match(/\[SUMMARY\]([\s\S]*?)\[\/SUMMARY\]/);
+  const koreanStocksMatch = rawText.match(/\[KOREAN_STOCKS\]([\s\S]*?)\[\/KOREAN_STOCKS\]/);
   const htmlMatch = rawText.match(/\[HTML\]([\s\S]*?)\[\/HTML\]/);
 
   if (!titleMatch || !summaryMatch || !htmlMatch) {
@@ -397,6 +409,7 @@ function parseFinalPostResponse(rawText) {
   return {
     title: titleMatch[1].trim(),
     summary: summaryMatch[1].trim(),
+    koreanStocks: koreanStocksMatch ? koreanStocksMatch[1].trim() : '',
     htmlContent: htmlMatch[1].trim(),
   };
 }
@@ -510,6 +523,7 @@ async function generateFinalPost(model, agentDebate) {
   const fullPrompt = `${COORDINATOR_PROMPT}\n\n${debateSummary}`;
   const result = await callGeminiWithRetry(model, fullPrompt, 'coordinator');
   const rawText = result.response.text();
+  // { title, summary, koreanStocks, htmlContent } 반환
   return parseFinalPostResponse(rawText);
 }
 
@@ -596,7 +610,7 @@ async function analyzeAndSave({ newsHeadlines, category, keywords }) {
   await sleep(AGENT_CALL_DELAY_MS);
 
   console.log('✍️  [2/3] 최종 블로그 포스팅 생성 중...');
-  const { title, summary, htmlContent } = await generateFinalPost(model, agentDebate);
+  const { title, summary, koreanStocks, htmlContent } = await generateFinalPost(model, agentDebate);
   console.log(`✅ 포스팅 생성 완료 — 제목: ${title}`);
 
   console.log('💾 [3/3] Google Sheets 저장 중...');
@@ -612,7 +626,7 @@ async function analyzeAndSave({ newsHeadlines, category, keywords }) {
   });
   console.log('✅ 시트 저장 완료');
 
-  return { agentDebate, finalPost: htmlContent, title, summary, savedAt: today };
+  return { agentDebate, finalPost: htmlContent, title, summary, koreanStocks, savedAt: today };
 }
 
 /**
@@ -655,18 +669,16 @@ async function runAutoWorkflow() {
     keywords,
   });
 
-  // Step 6: 썸네일 이미지 생성 (실패해도 워크플로우 계속)
-  console.log('🖼️  [6/7] 썸네일 이미지 생성 중...');
-  const thumbnail = await generateThumbnailImage(result.title);
+  // Step 6: 썸네일 이미지 생성 비활성화 (이미지 없이 텍스트 알림으로 운영)
+  console.log('⏭️  [6/7] 이미지 생성 건너뜀 — 텍스트 알림 전용 모드');
 
-  // Step 7: 텔레그램 알림 발송 (이미지 포함 또는 텍스트 전용)
+  // Step 7: 텔레그램 알림 발송 (텍스트 전용 + 국내 핵심 종목 포함)
   console.log('📱 [7/7] 텔레그램 알림 발송 중...');
   await sendTelegramNotification({
     title: result.title,
     summary: result.summary,
+    koreanStocks: result.koreanStocks,
     sheetUrl: process.env.GOOGLE_SHEETS_URL ?? '',
-    photoBuffer: thumbnail?.buffer ?? null,
-    photoMimeType: thumbnail?.mimeType ?? 'image/png',
   });
 
   return { geopoliticalRiskLevel, category, keywords, ...result };
