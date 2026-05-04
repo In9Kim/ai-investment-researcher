@@ -159,69 +159,117 @@ const COORDINATOR_PROMPT = `
 [/KOREAN_STOCKS]
 
 [HTML]
-<h2>📰 오늘 시장을 흔든 이슈</h2>
-<p>(핵심 뉴스 서론 2문장. 왜 지금 이 이슈가 중요한지 독자 관심을 잡을 것)</p>
-<ul>
-<li><strong>(핵심 포인트 1 — 종목명 또는 지표명)</strong>: (한 줄 설명)</li>
-<li><strong>(핵심 포인트 2)</strong>: (한 줄 설명)</li>
-<li><strong>(핵심 포인트 3)</strong>: (한 줄 설명)</li>
+<style>.vib-expert p{margin:0}.vib-tbl tr:hover td{background:#EBF5FB!important}</style>
+<div style="font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;line-height:1.8;letter-spacing:-0.02em;color:#1a1a1a;max-width:740px;margin:0 auto;">
+
+<h2 style="border-left:4px solid #2C7BE5;padding-left:12px;margin-top:0;">📰 오늘 시장을 흔든 이슈</h2>
+<p style="line-height:1.8;letter-spacing:-0.02em;">(핵심 뉴스 서론 2문장. 왜 지금 이 이슈가 중요한지 독자 관심을 잡을 것)</p>
+<ul style="line-height:1.9;padding-left:20px;">
+<li style="margin-bottom:8px;"><span style="background:linear-gradient(transparent 55%,#FFE066 55%);font-weight:700;">(핵심 포인트 1 — 종목명 또는 지표명)</span>: (한 줄 설명)</li>
+<li style="margin-bottom:8px;"><span style="background:linear-gradient(transparent 55%,#FFE066 55%);font-weight:700;">(핵심 포인트 2)</span>: (한 줄 설명)</li>
+<li style="margin-bottom:8px;"><span style="background:linear-gradient(transparent 55%,#FFE066 55%);font-weight:700;">(핵심 포인트 3)</span>: (한 줄 설명)</li>
 </ul>
-<hr>
 
-<h2>🇰🇷 오늘 국장(코스피/코스닥) 직접 영향 — 지금 당장 봐야 할 종목</h2>
-<h3>미국 증시 이슈 → 국내 종목 즉시 연결 분석</h3>
-<p>(미국 증시 핵심 이슈가 오늘 코스피·코스닥에 미칠 파급 효과를 1~2문장으로 연결. 삼성전자·SK하이닉스 등 반도체주를 반드시 언급. 예: "엔비디아가 X% 상승하면서 HBM 공급망인 <strong>삼성전자</strong>와 <strong>SK하이닉스</strong>에 직접 수혜가 예상됩니다.")</p>
-<ul>
-<li><strong>삼성전자 또는 SK하이닉스 (반드시 포함)</strong>: (미국 이슈 연결 고리 + 구체적 예상 영향, 삼성전자 키워드 자연스럽게 포함)</li>
-<li><strong>(2번째 주목 종목 또는 ETF — KODEX 반도체, TIGER 미국나스닥100 등)</strong>: (구체적 영향 한 줄)</li>
-<li><strong>(3번째 종목 또는 섹터)</strong>: (구체적 영향 한 줄)</li>
+<hr style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;">
+
+<h2 style="border-left:4px solid #27AE60;padding-left:12px;">🇰🇷 오늘 국장(코스피/코스닥) 직접 영향 — 지금 당장 봐야 할 종목</h2>
+<h3 style="color:#555;font-size:0.95em;font-weight:600;">미국 증시 이슈 → 국내 종목 즉시 연결 분석</h3>
+<p style="line-height:1.8;letter-spacing:-0.02em;">(미국 증시 핵심 이슈가 오늘 코스피·코스닥에 미칠 파급 효과를 1~2문장으로 연결. 삼성전자·SK하이닉스 등 반도체주를 반드시 언급. 예: "엔비디아가 X% 상승하면서 HBM 공급망인 <span style="background:linear-gradient(transparent 55%,#FFE066 55%);font-weight:700;">삼성전자</span>와 <span style="background:linear-gradient(transparent 55%,#FFE066 55%);font-weight:700;">SK하이닉스</span>에 직접 수혜가 예상됩니다.")</p>
+<ul style="line-height:1.9;padding-left:20px;">
+<li style="margin-bottom:8px;"><span style="background:linear-gradient(transparent 55%,#FFE066 55%);font-weight:700;">삼성전자 또는 SK하이닉스 (반드시 포함)</span>: (미국 이슈 연결 고리 + 구체적 예상 영향, 삼성전자 키워드 자연스럽게 포함)</li>
+<li style="margin-bottom:8px;"><span style="background:linear-gradient(transparent 55%,#FFE066 55%);font-weight:700;">(2번째 주목 종목 또는 ETF — KODEX 반도체, TIGER 미국나스닥100 등)</span>: (구체적 영향 한 줄)</li>
+<li style="margin-bottom:8px;"><span style="background:linear-gradient(transparent 55%,#FFE066 55%);font-weight:700;">(3번째 종목 또는 섹터)</span>: (구체적 영향 한 줄)</li>
 </ul>
-<hr>
 
-<h2>🗣️ 전문가 4인의 긴급 단톡방 🔥</h2>
-<blockquote><strong>💰 매크로 분석가</strong><br>"(agentA 핵심 인사이트 1~2문장 대화체. 구체적 수치 포함)"</blockquote>
-<blockquote><strong>📊 퀀트 트레이더</strong><br>"(agentB 핵심 인사이트 1~2문장. 지지선/저항선 레벨 포함)"</blockquote>
-<blockquote><strong>🏢 펀드매니저</strong><br>"(agentC 핵심 인사이트 1~2문장. 종목·밸류에이션 언급)"</blockquote>
-<blockquote><strong>⚠️ 리스크 매니저</strong><br>"(agentD 핵심 경고 1~2문장. 가장 날카롭게, 구체적 하락 시나리오 포함)"</blockquote>
-<hr>
+<hr style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;">
 
-<h2>🇺🇸 미국 증시 핵심 분석</h2>
-<h3>거시경제 & 기술적 시그널</h3>
-<ul>
-<li>(매크로 핵심 포인트 — <strong>구체적 수치 또는 지표명</strong> 포함)</li>
-<li>(기술적 지표 핵심 포인트 — <strong>레벨/수치</strong> 포함)</li>
-<li>(섹터·종목 펀더멘털 — 종목명 + <strong>핵심 지표</strong>)</li>
+<h2 style="border-left:4px solid #E67E22;padding-left:12px;">🗣️ 전문가 4인의 긴급 단톡방 🔥</h2>
+<div class="vib-expert" style="border-left:4px solid #3498DB;background:#EBF5FB;border-radius:0 10px 10px 0;padding:16px 20px;margin:12px 0;">
+<p style="margin:0 0 6px 0;font-weight:700;font-size:0.95em;color:#2471A3;">💰 매크로 분석가</p>
+<p style="margin:0;line-height:1.8;color:#333;">"(agentA 핵심 인사이트 1~2문장 대화체. 구체적 수치 포함)"</p>
+</div>
+<div class="vib-expert" style="border-left:4px solid #27AE60;background:#EAFAF1;border-radius:0 10px 10px 0;padding:16px 20px;margin:12px 0;">
+<p style="margin:0 0 6px 0;font-weight:700;font-size:0.95em;color:#1E8449;">📊 퀀트 트레이더</p>
+<p style="margin:0;line-height:1.8;color:#333;">"(agentB 핵심 인사이트 1~2문장. 지지선/저항선 레벨 포함)"</p>
+</div>
+<div class="vib-expert" style="border-left:4px solid #8E44AD;background:#F5EEF8;border-radius:0 10px 10px 0;padding:16px 20px;margin:12px 0;">
+<p style="margin:0 0 6px 0;font-weight:700;font-size:0.95em;color:#76448A;">🏢 펀드매니저</p>
+<p style="margin:0;line-height:1.8;color:#333;">"(agentC 핵심 인사이트 1~2문장. 종목·밸류에이션 언급)"</p>
+</div>
+<div class="vib-expert" style="border-left:4px solid #E74C3C;background:#FDEDEC;border-radius:0 10px 10px 0;padding:16px 20px;margin:12px 0;">
+<p style="margin:0 0 6px 0;font-weight:700;font-size:0.95em;color:#CB4335;">⚠️ 리스크 매니저</p>
+<p style="margin:0;line-height:1.8;color:#333;">"(agentD 핵심 경고 1~2문장. 가장 날카롭게, 구체적 하락 시나리오 포함)"</p>
+</div>
+
+<hr style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;">
+
+<h2 style="border-left:4px solid #2C7BE5;padding-left:12px;">🇺🇸 미국 증시 핵심 분석</h2>
+<h3 style="color:#555;font-size:0.95em;font-weight:600;">거시경제 &amp; 기술적 시그널</h3>
+<ul style="line-height:1.9;padding-left:20px;">
+<li style="margin-bottom:8px;">(매크로 핵심 포인트 — <span style="background:linear-gradient(transparent 55%,#FFE066 55%);font-weight:700;">구체적 수치 또는 지표명</span> 포함)</li>
+<li style="margin-bottom:8px;">(기술적 지표 핵심 포인트 — <span style="background:linear-gradient(transparent 55%,#FFE066 55%);font-weight:700;">레벨/수치</span> 포함)</li>
+<li style="margin-bottom:8px;">(섹터·종목 펀더멘털 — 종목명 + <span style="background:linear-gradient(transparent 55%,#FFE066 55%);font-weight:700;">핵심 지표</span>)</li>
 </ul>
-<hr>
 
-<h2>🎯 종합 투자 인사이트</h2>
-<p>(미국+한국 통합 결론. 300~400자. SEO 키워드 자연스럽게 포함: 코스피, 나스닥, S&P500, 서학개미, 반도체주, ETF)</p>
-<hr>
+<hr style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;">
 
-<h2>📊 오늘의 투자 매력도 점수</h2>
-<table style="border-collapse:collapse; width:100%; text-align:center;">
-<thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:8px;">항목</th><th style="border:1px solid #ddd; padding:8px;">평가</th><th style="border:1px solid #ddd; padding:8px;">점수</th></tr></thead>
+<h2 style="border-left:4px solid #2C7BE5;padding-left:12px;">🎯 종합 투자 인사이트</h2>
+<div style="background:#FAFAFA;border:1px solid #E8E8E8;border-radius:10px;padding:20px 24px;">
+<p style="margin:0;line-height:1.9;letter-spacing:-0.02em;">(미국+한국 통합 결론. 300~400자. SEO 키워드 자연스럽게 포함: 코스피, 나스닥, S&P500, 서학개미, 반도체주, ETF)</p>
+</div>
+
+<hr style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;">
+
+<h2 style="border-left:4px solid #2C7BE5;padding-left:12px;">📊 오늘의 투자 매력도 점수</h2>
+<table class="vib-tbl" style="border-collapse:collapse;width:100%;text-align:center;font-size:0.92em;">
+<thead>
+<tr style="background:#2C3E50;color:#fff;">
+<th style="padding:13px 16px;font-weight:600;border:none;text-align:center;">항목</th>
+<th style="padding:13px 16px;font-weight:600;border:none;text-align:center;">평가</th>
+<th style="padding:13px 16px;font-weight:600;border:none;text-align:center;">점수</th>
+</tr>
+</thead>
 <tbody>
-<tr><td style="border:1px solid #ddd; padding:8px;">🌍 매크로 환경</td><td style="border:1px solid #ddd; padding:8px;">(한 줄 근거)</td><td style="border:1px solid #ddd; padding:8px;">(⭐ 1~5개)</td></tr>
-<tr><td style="border:1px solid #ddd; padding:8px;">📈 기술적 신호</td><td style="border:1px solid #ddd; padding:8px;">(한 줄 근거)</td><td style="border:1px solid #ddd; padding:8px;">(⭐ 1~5개)</td></tr>
-<tr><td style="border:1px solid #ddd; padding:8px;">💼 펀더멘털</td><td style="border:1px solid #ddd; padding:8px;">(한 줄 근거)</td><td style="border:1px solid #ddd; padding:8px;">(⭐ 1~5개)</td></tr>
-<tr><td style="border:1px solid #ddd; padding:8px;">🚨 리스크 수준</td><td style="border:1px solid #ddd; padding:8px;">(한 줄 근거)</td><td style="border:1px solid #ddd; padding:8px;">(⭐ 1~5개)</td></tr>
-<tr style="font-weight:bold;"><td style="border:1px solid #ddd; padding:8px;">🏆 종합</td><td style="border:1px solid #ddd; padding:8px;"></td><td style="border:1px solid #ddd; padding:8px;">★★★☆☆ (X.X / 5.0)</td></tr>
-</tbody></table>
-<hr>
+<tr style="border-bottom:1px solid #EBEBEB;">
+<td style="padding:13px 16px;background:#fff;">🌍 매크로 환경</td><td style="padding:13px 16px;background:#fff;text-align:left;">(한 줄 근거)</td><td style="padding:13px 16px;background:#fff;">(⭐ 1~5개)</td>
+</tr>
+<tr style="border-bottom:1px solid #EBEBEB;">
+<td style="padding:13px 16px;background:#f9f9f9;">📈 기술적 신호</td><td style="padding:13px 16px;background:#f9f9f9;text-align:left;">(한 줄 근거)</td><td style="padding:13px 16px;background:#f9f9f9;">(⭐ 1~5개)</td>
+</tr>
+<tr style="border-bottom:1px solid #EBEBEB;">
+<td style="padding:13px 16px;background:#fff;">💼 펀더멘털</td><td style="padding:13px 16px;background:#fff;text-align:left;">(한 줄 근거)</td><td style="padding:13px 16px;background:#fff;">(⭐ 1~5개)</td>
+</tr>
+<tr style="border-bottom:1px solid #EBEBEB;">
+<td style="padding:13px 16px;background:#f9f9f9;">🚨 리스크 수준</td><td style="padding:13px 16px;background:#f9f9f9;text-align:left;">(한 줄 근거)</td><td style="padding:13px 16px;background:#f9f9f9;">(⭐ 1~5개)</td>
+</tr>
+<tr style="background:#EBF5FB;font-weight:700;border-top:2px solid #2C3E50;">
+<td style="padding:14px 16px;">🏆 종합</td><td style="padding:14px 16px;"></td><td style="padding:14px 16px;">★★★☆☆ (X.X / 5.0)</td>
+</tr>
+</tbody>
+</table>
 
-<h2>⏰ 내일 아침, 딱 하나만 확인하세요</h2>
-<blockquote><strong>(지표명 또는 이벤트명)</strong>: (왜 내일의 핵심인지 2문장. 구체적 수치 기준 포함)</blockquote>
+<hr style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;">
 
-<p><em>※ 본 포스팅은 AI 멀티에이전트 리서치 시스템이 생성한 투자 참고 자료이며, 투자 결정의 최종 책임은 본인에게 있습니다.</em></p>
+<h2 style="border-left:4px solid #F39C12;padding-left:12px;">⏰ 내일 아침, 딱 하나만 확인하세요</h2>
+<div style="background:#FFFBEB;border:1px solid #F9CA24;border-radius:10px;padding:20px 24px;">
+<p style="margin:0;line-height:1.8;"><span style="font-weight:700;color:#D4AC0D;">(지표명 또는 이벤트명)</span>: (왜 내일의 핵심인지 2문장. 구체적 수치 기준 포함)</p>
+</div>
+
+<p style="font-size:0.8em;color:#aaa;margin-top:36px;line-height:1.6;letter-spacing:-0.01em;">※ 본 포스팅은 AI 멀티에이전트 리서치 시스템이 생성한 투자 참고 자료이며, 투자 결정의 최종 책임은 본인에게 있습니다.</p>
+
+</div>
 [/HTML]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [HTML 작성 규칙]
 - [HTML] 블록 안에는 순수 HTML 태그만 사용, 마크다운(#, *, >, ---) 절대 금지
 - 이모지는 <h2>/<h3> 태그 제목에만 사용, 본문 내 남용 금지
-- <ul><li>를 적극 활용하여 문장을 짧게 끊어 모바일 가독성 향상
-- 핵심 수치·종목명·등락률은 반드시 <strong>으로 강조
+- <ul><li>에 style="line-height:1.9;padding-left:20px;" 유지, <li>에 style="margin-bottom:8px;" 적용
+- 핵심 수치·종목명·등락률은 <strong> 대신 반드시 <span style="background:linear-gradient(transparent 55%,#FFE066 55%);font-weight:700;">강조 텍스트</span> 형식 사용
+- 전문가 의견은 반드시 위 div 박스 구조와 색상 유지 (매크로=파란계열 #EBF5FB, 퀀트=초록계열 #EAFAF1, 펀드=보라계열 #F5EEF8, 리스크=빨간계열 #FDEDEC)
+- 모든 <p>에 style="line-height:1.8;letter-spacing:-0.02em;" 적용
+- <hr>는 반드시 style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;" 사용
+- 표 홀수 행 background:#fff, 짝수 행 background:#f9f9f9 교대 유지
 - "성공 투자 기원합니다" 같은 상투적 마무리 절대 금지
 - 총 텍스트 분량: 1000~1400자 (HTML 태그 제외 기준)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
