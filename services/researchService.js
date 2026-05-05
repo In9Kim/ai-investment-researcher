@@ -190,19 +190,19 @@ const COORDINATOR_PROMPT = `
 <hr style="border:0;height:1px;background:#eee;margin:40px 0;">
 
 <h2 style="border-bottom:2px solid #E67E22;padding-bottom:8px;line-height:1.8;">🗣️ 전문가 4인의 긴급 단톡방 🔥</h2>
-<div style='border:1px solid #ddd;padding:15px;margin-bottom:10px;background-color:#f9f9f9;'>
+<div style='background-color:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #333;'>
 <strong style='display:block;margin-bottom:8px;font-size:1.1em;'>💰 매크로 분석가</strong>
 <span style='line-height:1.7;color:#444;'>(agentA 핵심 인사이트 1~2문장. 구체적 수치 포함. 따옴표 없이 직접 서술체)</span>
 </div>
-<div style='border:1px solid #ddd;padding:15px;margin-bottom:10px;background-color:#f9f9f9;'>
+<div style='background-color:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #333;'>
 <strong style='display:block;margin-bottom:8px;font-size:1.1em;'>📊 퀀트 트레이더</strong>
 <span style='line-height:1.7;color:#444;'>(agentB 핵심 인사이트 1~2문장. 지지선/저항선 레벨 포함. 따옴표 없이 직접 서술체)</span>
 </div>
-<div style='border:1px solid #ddd;padding:15px;margin-bottom:10px;background-color:#f9f9f9;'>
+<div style='background-color:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #333;'>
 <strong style='display:block;margin-bottom:8px;font-size:1.1em;'>🏢 펀드매니저</strong>
 <span style='line-height:1.7;color:#444;'>(agentC 핵심 인사이트 1~2문장. 종목·밸류에이션 언급. 따옴표 없이 직접 서술체)</span>
 </div>
-<div style='border:1px solid #ddd;padding:15px;margin-bottom:10px;background-color:#f9f9f9;'>
+<div style='background-color:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #333;'>
 <strong style='display:block;margin-bottom:8px;font-size:1.1em;'>⚠️ 리스크 매니저</strong>
 <span style='line-height:1.7;color:#444;'>(agentD 핵심 경고 1~2문장. 구체적 하락 시나리오 포함. 따옴표 없이 직접 서술체)</span>
 </div>
@@ -279,11 +279,11 @@ const COORDINATOR_PROMPT = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [HTML 작성 규칙]
 - 마크다운 일체 금지: \`\`\`html, \`\`\` 절대 사용 불가. [HTML] 블록은 <div 로 시작 → </div> 로 끝낼 것
-- <style> 태그 및 class 속성 절대 금지 — 반드시 인라인 style='...' 속성만 사용 (작은따옴표 필수, 큰따옴표 금지)
+- <style> 태그 및 class 속성 절대 금지 — 반드시 인라인 style='...' 속성만 사용 (홑따옴표 필수, 쌍따옴표(") 절대 금지)
 - HTML 내부 줄바꿈: \n 문자 절대 금지 — 줄바꿈이 필요하면 <br> 또는 <p> 태그 사용
 - HTML을 감싸는 외부 따옴표, 설명 텍스트 절대 금지
 - 핵심 수치·종목명·등락률 강조: <span style='background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;'>텍스트</span>
-- 전문가 의견: 따옴표("") 절대 금지. div(border:1px solid #ddd;padding:15px;margin-bottom:10px;background-color:#f9f9f9;) + strong(display:block;margin-bottom:8px;font-size:1.1em;) + span(line-height:1.7;color:#444;) 구조 정확히 유지
+- 전문가 의견: 쌍따옴표("") 절대 금지. div(background-color:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #333;) + strong(display:block;margin-bottom:8px;font-size:1.1em;) + span(line-height:1.7;color:#444;) 구조 정확히 유지
 - 국내 종목: div(padding:15px;border:1px solid #eee;border-radius:8px;background:#fff;) + h3(margin-top:0;color:#0056b3;) + ul(list-style:none;padding-left:0;) + li(margin-bottom:10px;) ✅ <strong>종목명:</strong> 한 줄 설명 구조 유지
 - 모든 <h2>: border-bottom:2px solid [섹션 색상]; padding-bottom:8px; line-height:1.8 유지
 - 모든 <h3>: border-bottom:1px solid #eee; padding-bottom:6px; line-height:1.8 유지
@@ -471,6 +471,20 @@ function stripHtmlArtifacts(text) {
     .replace(/\s*```$/i, '')                                   // 뒤쪽 ``` 제거
     .replace(/^["'`]|["'`]$/g, '')                             // 외부 따옴표 제거
     .replace(/style="([^"]*)"/g, (_, v) => `style='${v}'`)    // 구글 시트 호환: 큰→작은 따옴표
+    .trim();
+}
+
+/**
+ * Google Sheets 적재 직전 HTML 최종 정제
+ * Why: 구글 시트는 셀 내 쌍따옴표가 CSV/JSON 직렬화와 충돌하고, \n은 셀 분할을 유발함
+ *      stripHtmlArtifacts(파싱 시점) 이후 2차 방어선으로 작동
+ */
+function prepareForGoogleSheets(htmlContent) {
+  return htmlContent
+    .replace(/```html|```/g, '')  // 마크다운 코드 블록 잔재 제거
+    .replace(/^["']|["']$/g, '')  // 문자열 앞뒤 감싸는 따옴표 제거
+    .replace(/"/g, "'")           // 모든 쌍따옴표 → 홑따옴표 (구글 시트 충돌 방지)
+    .replace(/\n/g, ' ')          // 줄바꿈 → 공백 (셀 내 데이터 보호)
     .trim();
 }
 
@@ -706,7 +720,7 @@ async function analyzeAndSave({ newsHeadlines, category, keywords }) {
     category,
     keywords,
     agentDebate,
-    finalPost: htmlContent,
+    finalPost: prepareForGoogleSheets(htmlContent),
     status: false,
   });
   console.log('✅ 시트 저장 완료');
