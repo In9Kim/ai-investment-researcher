@@ -127,6 +127,11 @@ const COORDINATOR_PROMPT = `
 매일 수만 명의 서학개미와 국내 투자자가 읽는 "AI 데일리 모닝 브리핑"을 운영합니다.
 아래 4인 전문가의 토론을 바탕으로 내일 아침 투자자가 읽을 통합 리포트를 작성하세요.
 
+⚠️ 출력 최우선 규칙 — 위반 시 전체 출력 무효:
+- \`\`\`html, \`\`\`, 마크다운 기호 일체 절대 금지
+- [HTML] 블록 내용은 반드시 <div 로 시작하여 </div> 로 끝나는 순수 HTML만 출력
+- HTML을 감싸는 외부 따옴표, 설명 텍스트, 코드 블록 표시 절대 금지
+
 글의 시점: 오늘 저녁 작성 → 내일 아침 출근 전 투자자가 읽는 브리핑 형식.
 말투: 전문적이되 친근한 구어체 (~해요, ~이죠, ~거든요), 독자에게 직접 말하는 느낌으로.
 
@@ -164,64 +169,60 @@ const COORDINATOR_PROMPT = `
 <h2 style="border-bottom:2px solid #2C7BE5;padding-bottom:8px;margin-top:0;line-height:1.8;">📰 오늘 시장을 흔든 이슈</h2>
 <p style="line-height:1.8;letter-spacing:-0.02em;">(핵심 뉴스 서론 2문장. 왜 지금 이 이슈가 중요한지 독자 관심을 잡을 것. 상투적 도입 금지 — 바로 핵심으로 시작)</p>
 <ul style="line-height:1.9;padding-left:20px;">
-<li style="margin-bottom:8px;"><span style="background:linear-gradient(180deg,rgba(255,255,255,0) 60%,#ffeb3b 40%);font-weight:700;">(핵심 포인트 1 — 종목명 또는 지표명)</span>: (한 줄 설명)</li>
-<li style="margin-bottom:8px;"><span style="background:linear-gradient(180deg,rgba(255,255,255,0) 60%,#ffeb3b 40%);font-weight:700;">(핵심 포인트 2)</span>: (한 줄 설명)</li>
-<li style="margin-bottom:8px;"><span style="background:linear-gradient(180deg,rgba(255,255,255,0) 60%,#ffeb3b 40%);font-weight:700;">(핵심 포인트 3)</span>: (한 줄 설명)</li>
+<li style="margin-bottom:8px;"><span style="background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;">(핵심 포인트 1 — 종목명 또는 지표명)</span>: (한 줄 설명)</li>
+<li style="margin-bottom:8px;"><span style="background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;">(핵심 포인트 2)</span>: (한 줄 설명)</li>
+<li style="margin-bottom:8px;"><span style="background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;">(핵심 포인트 3)</span>: (한 줄 설명)</li>
 </ul>
 
-<hr style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;">
+<hr style="border:0;height:1px;background:#eee;margin:40px 0;">
 
 <h2 style="border-bottom:2px solid #27AE60;padding-bottom:8px;line-height:1.8;">🇰🇷 오늘 국장(코스피/코스닥) 직접 영향 — 지금 당장 봐야 할 종목</h2>
 <h3 style="color:#555;font-size:0.95em;font-weight:600;border-bottom:1px solid #eee;padding-bottom:6px;line-height:1.8;">미국 증시 이슈 → 국내 종목 즉시 연결 분석</h3>
-<p style="line-height:1.8;letter-spacing:-0.02em;">(미국 증시 핵심 이슈가 오늘 코스피·코스닥에 미칠 파급 효과 1~2문장. 삼성전자·SK하이닉스 반드시 언급. 예: 엔비디아가 X% 상승하면서 HBM 공급망인 <span style="background:linear-gradient(180deg,rgba(255,255,255,0) 60%,#ffeb3b 40%);font-weight:700;">삼성전자</span>와 <span style="background:linear-gradient(180deg,rgba(255,255,255,0) 60%,#ffeb3b 40%);font-weight:700;">SK하이닉스</span>에 직접 수혜가 예상된다.)</p>
+<p style="line-height:1.8;letter-spacing:-0.02em;">(미국 증시 핵심 이슈가 오늘 코스피·코스닥에 미칠 파급 효과 1~2문장. 삼성전자·SK하이닉스 반드시 언급. 예: 엔비디아가 X% 상승하면서 HBM 공급망인 <span style="background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;">삼성전자</span>와 <span style="background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;">SK하이닉스</span>에 직접 수혜가 예상된다.)</p>
 <ul style="list-style:none;padding:0;margin:0;">
 <li style="margin-bottom:12px;line-height:1.8;">📈 <span style="color:#0056b3;font-weight:700;">삼성전자 또는 SK하이닉스 (반드시 포함)</span>: (미국 이슈 연결 고리 + 구체적 예상 영향 한 줄)</li>
 <li style="margin-bottom:12px;line-height:1.8;">💻 <span style="color:#0056b3;font-weight:700;">(2번째 주목 종목 또는 ETF — KODEX 반도체, TIGER 미국나스닥100 등)</span>: (구체적 영향 한 줄)</li>
 <li style="margin-bottom:12px;line-height:1.8;">📊 <span style="color:#0056b3;font-weight:700;">(3번째 종목 또는 섹터)</span>: (구체적 영향 한 줄)</li>
 </ul>
 
-<hr style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;">
+<hr style="border:0;height:1px;background:#eee;margin:40px 0;">
 
 <h2 style="border-bottom:2px solid #E67E22;padding-bottom:8px;line-height:1.8;">🗣️ 전문가 4인의 긴급 단톡방 🔥</h2>
-<div style="background:#f0f7ff;border-left:5px solid #2C7BE5;padding:15px;margin-bottom:15px;border-radius:0 8px 8px 0;">
-<p style="margin:0 0 8px 0;font-weight:700;font-size:1em;color:#2471A3;">💰 매크로 분석가</p>
-<hr style="border:none;border-top:1px dotted #aac4e0;margin:0 0 10px 0;">
-<p style="margin:0;line-height:1.8;color:#333;">(agentA 핵심 인사이트 1~2문장. 구체적 수치 포함. 따옴표 없이 직접 서술체로 작성)</p>
+<div style="background-color:#f1f3f5;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #2C7BE5;">
+<strong style="font-size:1em;color:#2471A3;display:block;margin-bottom:10px;">💰 매크로 분석가</strong>
+<p style="margin:0;line-height:1.8;color:#333;">(agentA 핵심 인사이트 1~2문장. 구체적 수치 포함. 따옴표 없이 직접 서술체)</p>
 </div>
-<div style="background:#f0faf5;border-left:5px solid #27AE60;padding:15px;margin-bottom:15px;border-radius:0 8px 8px 0;">
-<p style="margin:0 0 8px 0;font-weight:700;font-size:1em;color:#1E8449;">📊 퀀트 트레이더</p>
-<hr style="border:none;border-top:1px dotted #a3d4b5;margin:0 0 10px 0;">
-<p style="margin:0;line-height:1.8;color:#333;">(agentB 핵심 인사이트 1~2문장. 지지선/저항선 레벨 포함. 따옴표 없이 직접 서술체로 작성)</p>
+<div style="background-color:#f1f3f5;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #27AE60;">
+<strong style="font-size:1em;color:#1E8449;display:block;margin-bottom:10px;">📊 퀀트 트레이더</strong>
+<p style="margin:0;line-height:1.8;color:#333;">(agentB 핵심 인사이트 1~2문장. 지지선/저항선 레벨 포함. 따옴표 없이 직접 서술체)</p>
 </div>
-<div style="background:#f8f0ff;border-left:5px solid #8E44AD;padding:15px;margin-bottom:15px;border-radius:0 8px 8px 0;">
-<p style="margin:0 0 8px 0;font-weight:700;font-size:1em;color:#76448A;">🏢 펀드매니저</p>
-<hr style="border:none;border-top:1px dotted #c9a8e0;margin:0 0 10px 0;">
-<p style="margin:0;line-height:1.8;color:#333;">(agentC 핵심 인사이트 1~2문장. 종목·밸류에이션 언급. 따옴표 없이 직접 서술체로 작성)</p>
+<div style="background-color:#f1f3f5;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #8E44AD;">
+<strong style="font-size:1em;color:#76448A;display:block;margin-bottom:10px;">🏢 펀드매니저</strong>
+<p style="margin:0;line-height:1.8;color:#333;">(agentC 핵심 인사이트 1~2문장. 종목·밸류에이션 언급. 따옴표 없이 직접 서술체)</p>
 </div>
-<div style="background:#fff5f5;border-left:5px solid #E74C3C;padding:15px;margin-bottom:15px;border-radius:0 8px 8px 0;">
-<p style="margin:0 0 8px 0;font-weight:700;font-size:1em;color:#CB4335;">⚠️ 리스크 매니저</p>
-<hr style="border:none;border-top:1px dotted #e8a89e;margin:0 0 10px 0;">
-<p style="margin:0;line-height:1.8;color:#333;">(agentD 핵심 경고 1~2문장. 구체적 하락 시나리오 포함. 따옴표 없이 직접 서술체로 작성)</p>
+<div style="background-color:#f1f3f5;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #E74C3C;">
+<strong style="font-size:1em;color:#CB4335;display:block;margin-bottom:10px;">⚠️ 리스크 매니저</strong>
+<p style="margin:0;line-height:1.8;color:#333;">(agentD 핵심 경고 1~2문장. 구체적 하락 시나리오 포함. 따옴표 없이 직접 서술체)</p>
 </div>
 
-<hr style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;">
+<hr style="border:0;height:1px;background:#eee;margin:40px 0;">
 
 <h2 style="border-bottom:2px solid #2C7BE5;padding-bottom:8px;line-height:1.8;">🇺🇸 미국 증시 핵심 분석</h2>
 <h3 style="color:#555;font-size:0.95em;font-weight:600;border-bottom:1px solid #eee;padding-bottom:6px;line-height:1.8;">거시경제 &amp; 기술적 시그널</h3>
 <ul style="line-height:1.9;padding-left:20px;">
-<li style="margin-bottom:8px;">(매크로 핵심 포인트 — <span style="background:linear-gradient(180deg,rgba(255,255,255,0) 60%,#ffeb3b 40%);font-weight:700;">구체적 수치 또는 지표명</span> 포함)</li>
-<li style="margin-bottom:8px;">(기술적 지표 핵심 포인트 — <span style="background:linear-gradient(180deg,rgba(255,255,255,0) 60%,#ffeb3b 40%);font-weight:700;">레벨/수치</span> 포함)</li>
-<li style="margin-bottom:8px;">(섹터·종목 펀더멘털 — 종목명 + <span style="background:linear-gradient(180deg,rgba(255,255,255,0) 60%,#ffeb3b 40%);font-weight:700;">핵심 지표</span>)</li>
+<li style="margin-bottom:8px;">(매크로 핵심 포인트 — <span style="background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;">구체적 수치 또는 지표명</span> 포함)</li>
+<li style="margin-bottom:8px;">(기술적 지표 핵심 포인트 — <span style="background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;">레벨/수치</span> 포함)</li>
+<li style="margin-bottom:8px;">(섹터·종목 펀더멘털 — 종목명 + <span style="background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;">핵심 지표</span>)</li>
 </ul>
 
-<hr style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;">
+<hr style="border:0;height:1px;background:#eee;margin:40px 0;">
 
 <h2 style="border-bottom:2px solid #2C7BE5;padding-bottom:8px;line-height:1.8;">🎯 종합 투자 인사이트</h2>
 <div style="background:#fafafa;border:1px solid #e8e8e8;border-radius:10px;padding:20px 24px;">
 <p style="margin:0;line-height:1.9;letter-spacing:-0.02em;">(미국+한국 통합 결론. 300~400자. 코스피, 나스닥, S&P500, 서학개미, 반도체주, ETF 키워드 자연스럽게 포함. 상투적 표현 없이 드라이하게 마무리)</p>
 </div>
 
-<hr style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;">
+<hr style="border:0;height:1px;background:#eee;margin:40px 0;">
 
 <h2 style="border-bottom:2px solid #2C7BE5;padding-bottom:8px;line-height:1.8;">📊 오늘의 투자 매력도 점수</h2>
 <table style="border-collapse:collapse;width:100%;text-align:center;font-size:0.92em;">
@@ -261,7 +262,7 @@ const COORDINATOR_PROMPT = `
 </tbody>
 </table>
 
-<hr style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;">
+<hr style="border:0;height:1px;background:#eee;margin:40px 0;">
 
 <h2 style="border-bottom:2px solid #F39C12;padding-bottom:8px;line-height:1.8;">⏰ 내일 아침, 딱 하나만 확인하세요</h2>
 <div style="background:#fffbeb;border:1px solid #f9ca24;border-radius:10px;padding:20px 24px;">
@@ -275,17 +276,19 @@ const COORDINATOR_PROMPT = `
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [HTML 작성 규칙]
-- [HTML] 블록 안에는 순수 HTML 태그만 사용, 마크다운(#, *, >, ---) 절대 금지
-- <style> 태그 절대 금지 — 반드시 인라인 style="..." 속성만 사용, class 속성 사용 금지
-- 핵심 수치·종목명·등락률 강조: <span style="background:linear-gradient(180deg,rgba(255,255,255,0) 60%,#ffeb3b 40%);font-weight:700;">텍스트</span>
-- 전문가 의견: 따옴표("") 없이 직접 서술체로 작성. 각 div 박스 구조(배경색·border-left·dotted hr)를 정확히 유지
+- 마크다운 일체 금지: \`\`\`html, \`\`\` 절대 사용 불가. [HTML] 블록은 <div 로 시작 → </div> 로 끝낼 것
+- <style> 태그 및 class 속성 절대 금지 — 반드시 인라인 style="..." 속성만 사용
+- HTML을 감싸는 외부 따옴표, 설명 텍스트 절대 금지
+- 핵심 수치·종목명·등락률 강조: <span style="background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;">텍스트</span>
+- 전문가 의견: 따옴표("") 없이 직접 서술체. div 박스(background-color:#f1f3f5;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid [색]) 구조 유지
 - 국내 종목 목록: list-style:none 무순서 목록 + 📈/💻/📊 아이콘 선두 + color:#0056b3;font-weight:700 종목명
 - 모든 <h2>: border-bottom:2px solid [섹션 색상]; padding-bottom:8px; line-height:1.8 유지
 - 모든 <h3>: border-bottom:1px solid #eee; padding-bottom:6px; line-height:1.8 유지
 - 모든 <p>와 <li>: line-height:1.8 적용
-- <hr>: 반드시 style="border:none;height:2px;background:linear-gradient(to right,transparent,#E0E0E0,transparent);margin:32px 0;"
+- <hr>: 반드시 style="border:0;height:1px;background:#eee;margin:40px 0;"
 - 표 홀수 행 background:#fff, 짝수 행 background:#f9f9f9 교대 유지
 - 문체: 드라이하고 세련된 서술체. "투자자 여러분", "성공 투자 기원합니다" 등 상투적 표현 절대 금지
+- 제목 대괄호 키워드([코스피 대응], [삼성전자] 등) + 본문 내 삼성전자·코스피 언급 비중 높게 유지
 - 총 텍스트 분량: 1000~1400자 (HTML 태그 제외 기준)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -454,6 +457,19 @@ function extractJsonFromGeminiResponse(rawText) {
 const RISK_LEVEL_EMOJI = { HIGH: '🔴', MEDIUM: '🟠', LOW: '🟡', NONE: '⚪' };
 
 /**
+ * Gemini가 프롬프트 지시에도 불구하고 간헐적으로 출력하는 마크다운 아티팩트 제거
+ * Why: ```html ... ``` 래핑, 외부 따옴표, 설명 텍스트가 섞이면 티스토리 HTML이 깨짐
+ */
+function stripHtmlArtifacts(text) {
+  return text
+    .replace(/^```html\s*/i, '')   // 앞쪽 ```html 제거
+    .replace(/^```\s*/i, '')       // 앞쪽 ``` 제거
+    .replace(/\s*```$/i, '')       // 뒤쪽 ``` 제거
+    .replace(/^["'`]|["'`]$/g, '') // 외부 따옴표 제거
+    .trim();
+}
+
+/**
  * Coordinator 응답에서 제목·요약·HTML 본문을 구분자 기반으로 파싱
  * Why: HTML을 JSON에 임베드하면 이스케이프 오류가 빈번 → [TITLE]/[SUMMARY]/[HTML] 구분자 방식 채택
  */
@@ -473,7 +489,8 @@ function parseFinalPostResponse(rawText) {
     title: titleMatch[1].trim(),
     summary: summaryMatch[1].trim(),
     koreanStocks: koreanStocksMatch ? koreanStocksMatch[1].trim() : '',
-    htmlContent: htmlMatch[1].trim(),
+    // stripHtmlArtifacts: 마크다운 코드 펜스·외부 따옴표를 코드 레벨에서 2차 제거
+    htmlContent: stripHtmlArtifacts(htmlMatch[1].trim()),
   };
 }
 
