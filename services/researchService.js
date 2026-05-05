@@ -177,32 +177,34 @@ const COORDINATOR_PROMPT = `
 <hr style="border:0;height:1px;background:#eee;margin:40px 0;">
 
 <h2 style="border-bottom:2px solid #27AE60;padding-bottom:8px;line-height:1.8;">🇰🇷 오늘 국장(코스피/코스닥) 직접 영향 — 지금 당장 봐야 할 종목</h2>
-<h3 style="color:#555;font-size:0.95em;font-weight:600;border-bottom:1px solid #eee;padding-bottom:6px;line-height:1.8;">미국 증시 이슈 → 국내 종목 즉시 연결 분석</h3>
 <p style="line-height:1.8;letter-spacing:-0.02em;">(미국 증시 핵심 이슈가 오늘 코스피·코스닥에 미칠 파급 효과 1~2문장. 삼성전자·SK하이닉스 반드시 언급. 예: 엔비디아가 X% 상승하면서 HBM 공급망인 <span style="background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;">삼성전자</span>와 <span style="background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;">SK하이닉스</span>에 직접 수혜가 예상된다.)</p>
-<ul style="list-style:none;padding:0;margin:0;">
-<li style="margin-bottom:12px;line-height:1.8;">📈 <span style="color:#0056b3;font-weight:700;">삼성전자 또는 SK하이닉스 (반드시 포함)</span>: (미국 이슈 연결 고리 + 구체적 예상 영향 한 줄)</li>
-<li style="margin-bottom:12px;line-height:1.8;">💻 <span style="color:#0056b3;font-weight:700;">(2번째 주목 종목 또는 ETF — KODEX 반도체, TIGER 미국나스닥100 등)</span>: (구체적 영향 한 줄)</li>
-<li style="margin-bottom:12px;line-height:1.8;">📊 <span style="color:#0056b3;font-weight:700;">(3번째 종목 또는 섹터)</span>: (구체적 영향 한 줄)</li>
+<div style="padding:15px;border:1px solid #eee;border-radius:8px;background:#fff;">
+<h3 style="margin-top:0;color:#0056b3;">🚀 오늘 국장(코스피) 즉시 영향</h3>
+<ul style="list-style:none;padding-left:0;">
+<li style="margin-bottom:10px;">✅ <strong>삼성전자 또는 SK하이닉스 (반드시 포함):</strong> (미국 이슈 연결 고리 + 구체적 예상 영향 한 줄)</li>
+<li style="margin-bottom:10px;">✅ <strong>(2번째 주목 종목 또는 ETF — KODEX 반도체, TIGER 미국나스닥100 등):</strong> (구체적 영향 한 줄)</li>
+<li style="margin-bottom:10px;">✅ <strong>(3번째 종목 또는 섹터):</strong> (구체적 영향 한 줄)</li>
 </ul>
+</div>
 
 <hr style="border:0;height:1px;background:#eee;margin:40px 0;">
 
 <h2 style="border-bottom:2px solid #E67E22;padding-bottom:8px;line-height:1.8;">🗣️ 전문가 4인의 긴급 단톡방 🔥</h2>
-<div style="background-color:#f1f3f5;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #2C7BE5;">
-<strong style="font-size:1em;color:#2471A3;display:block;margin-bottom:10px;">💰 매크로 분석가</strong>
-<p style="margin:0;line-height:1.8;color:#333;">(agentA 핵심 인사이트 1~2문장. 구체적 수치 포함. 따옴표 없이 직접 서술체)</p>
+<div style="background-color:#f8f9fa;border-radius:10px;padding:20px;margin-bottom:15px;border-left:5px solid #2C7BE5;">
+<strong style="display:block;margin-bottom:10px;font-size:1.1em;">💰 매크로 분석가</strong>
+<span style="line-height:1.7;color:#444;">(agentA 핵심 인사이트 1~2문장. 구체적 수치 포함. 따옴표 없이 직접 서술체)</span>
 </div>
-<div style="background-color:#f1f3f5;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #27AE60;">
-<strong style="font-size:1em;color:#1E8449;display:block;margin-bottom:10px;">📊 퀀트 트레이더</strong>
-<p style="margin:0;line-height:1.8;color:#333;">(agentB 핵심 인사이트 1~2문장. 지지선/저항선 레벨 포함. 따옴표 없이 직접 서술체)</p>
+<div style="background-color:#f8f9fa;border-radius:10px;padding:20px;margin-bottom:15px;border-left:5px solid #27AE60;">
+<strong style="display:block;margin-bottom:10px;font-size:1.1em;">📊 퀀트 트레이더</strong>
+<span style="line-height:1.7;color:#444;">(agentB 핵심 인사이트 1~2문장. 지지선/저항선 레벨 포함. 따옴표 없이 직접 서술체)</span>
 </div>
-<div style="background-color:#f1f3f5;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #8E44AD;">
-<strong style="font-size:1em;color:#76448A;display:block;margin-bottom:10px;">🏢 펀드매니저</strong>
-<p style="margin:0;line-height:1.8;color:#333;">(agentC 핵심 인사이트 1~2문장. 종목·밸류에이션 언급. 따옴표 없이 직접 서술체)</p>
+<div style="background-color:#f8f9fa;border-radius:10px;padding:20px;margin-bottom:15px;border-left:5px solid #8E44AD;">
+<strong style="display:block;margin-bottom:10px;font-size:1.1em;">🏢 펀드매니저</strong>
+<span style="line-height:1.7;color:#444;">(agentC 핵심 인사이트 1~2문장. 종목·밸류에이션 언급. 따옴표 없이 직접 서술체)</span>
 </div>
-<div style="background-color:#f1f3f5;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid #E74C3C;">
-<strong style="font-size:1em;color:#CB4335;display:block;margin-bottom:10px;">⚠️ 리스크 매니저</strong>
-<p style="margin:0;line-height:1.8;color:#333;">(agentD 핵심 경고 1~2문장. 구체적 하락 시나리오 포함. 따옴표 없이 직접 서술체)</p>
+<div style="background-color:#f8f9fa;border-radius:10px;padding:20px;margin-bottom:15px;border-left:5px solid #E74C3C;">
+<strong style="display:block;margin-bottom:10px;font-size:1.1em;">⚠️ 리스크 매니저</strong>
+<span style="line-height:1.7;color:#444;">(agentD 핵심 경고 1~2문장. 구체적 하락 시나리오 포함. 따옴표 없이 직접 서술체)</span>
 </div>
 
 <hr style="border:0;height:1px;background:#eee;margin:40px 0;">
@@ -280,8 +282,8 @@ const COORDINATOR_PROMPT = `
 - <style> 태그 및 class 속성 절대 금지 — 반드시 인라인 style="..." 속성만 사용
 - HTML을 감싸는 외부 따옴표, 설명 텍스트 절대 금지
 - 핵심 수치·종목명·등락률 강조: <span style="background:linear-gradient(to top,#ffeb3b 40%,transparent 40%);font-weight:bold;">텍스트</span>
-- 전문가 의견: 따옴표("") 없이 직접 서술체. div 박스(background-color:#f1f3f5;border-radius:12px;padding:20px;margin-bottom:20px;border-left:8px solid [색]) 구조 유지
-- 국내 종목 목록: list-style:none 무순서 목록 + 📈/💻/📊 아이콘 선두 + color:#0056b3;font-weight:700 종목명
+- 전문가 의견: 따옴표("") 절대 금지. div(background-color:#f8f9fa;border-radius:10px;padding:20px;margin-bottom:15px;border-left:5px solid [색]) + strong(display:block;margin-bottom:10px;font-size:1.1em;) + span(line-height:1.7;color:#444;) 구조 정확히 유지
+- 국내 종목: div(padding:15px;border:1px solid #eee;border-radius:8px;background:#fff;) + h3(margin-top:0;color:#0056b3;) + ul(list-style:none;padding-left:0;) + li(margin-bottom:10px;) ✅ <strong>종목명:</strong> 한 줄 설명 구조 유지
 - 모든 <h2>: border-bottom:2px solid [섹션 색상]; padding-bottom:8px; line-height:1.8 유지
 - 모든 <h3>: border-bottom:1px solid #eee; padding-bottom:6px; line-height:1.8 유지
 - 모든 <p>와 <li>: line-height:1.8 적용
