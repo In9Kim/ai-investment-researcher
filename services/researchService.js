@@ -163,6 +163,13 @@ const COORDINATOR_PROMPT = `
 종목명3: 미국 이슈 연결 고리 + 오늘 예상 영향 한 줄
 [/KOREAN_STOCKS]
 
+[OVERALL_OPINION]
+(매크로 환경, 기술적 신호, 펀더멘털, 리스크 수준을 모두 반영한 오늘 시장의 최종 한 줄 평.
+8~15자 이내의 간결한 문구로 작성. 투자자가 직관적으로 판단할 수 있어야 함.
+예시: 낙관론 속 신중한 접근 필요 / 공포를 매수 기회로 삼아야 할 시점 / 추세 전환 신호, 관망 유지 / 단기 조정 후 재매수 기회
+따옴표·기호 없이 문구 텍스트만 출력)
+[/OVERALL_OPINION]
+
 [HTML]
 <div style="font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;line-height:1.8;letter-spacing:-0.02em;color:#1a1a1a;max-width:740px;margin:0 auto;">
 
@@ -256,10 +263,12 @@ const COORDINATOR_PROMPT = `
 <td style="padding:13px 16px;background:#f9f9f9;text-align:left;">(한 줄 근거)</td>
 <td style="padding:13px 16px;background:#f9f9f9;">(⭐ 1~5개)</td>
 </tr>
-<tr style="background:#ebf5fb;font-weight:700;border-top:2px solid #2C3E50;">
-<td style="padding:14px 16px;">🏆 종합</td>
-<td style="padding:14px 16px;"></td>
-<td style="padding:14px 16px;">★★★☆☆ (X.X / 5.0)</td>
+<tr style='background-color:#f8f9fa;font-weight:700;border-top:2px solid #2C3E50;'>
+<td style='padding:15px;text-align:center;'>🏆 <strong>종합</strong></td>
+<td style='padding:15px;' colspan='2'>
+<span style='font-size:1.1em;font-weight:bold;color:#d32f2f;'>오늘의 결론: (4인 에이전트 매크로·기술·펀더멘털·리스크 분석을 종합한 최종 한 줄 평. 예: 낙관론 속 신중한 접근 필요)</span><br>
+<span style='color:#666;'>점수: ★★★☆☆ (X.X / 5.0)</span>
+</td>
 </tr>
 </tbody>
 </table>
@@ -496,6 +505,7 @@ function parseFinalPostResponse(rawText) {
   const titleMatch = rawText.match(/\[TITLE\]([\s\S]*?)\[\/TITLE\]/);
   const summaryMatch = rawText.match(/\[SUMMARY\]([\s\S]*?)\[\/SUMMARY\]/);
   const koreanStocksMatch = rawText.match(/\[KOREAN_STOCKS\]([\s\S]*?)\[\/KOREAN_STOCKS\]/);
+  const overallOpinionMatch = rawText.match(/\[OVERALL_OPINION\]([\s\S]*?)\[\/OVERALL_OPINION\]/);
   const htmlMatch = rawText.match(/\[HTML\]([\s\S]*?)\[\/HTML\]/);
 
   if (!titleMatch || !summaryMatch || !htmlMatch) {
@@ -508,6 +518,7 @@ function parseFinalPostResponse(rawText) {
     title: titleMatch[1].trim(),
     summary: summaryMatch[1].trim(),
     koreanStocks: koreanStocksMatch ? koreanStocksMatch[1].trim() : '',
+    overallOpinion: overallOpinionMatch ? overallOpinionMatch[1].trim() : '',
     // stripHtmlArtifacts: 마크다운 코드 펜스·외부 따옴표를 코드 레벨에서 2차 제거
     htmlContent: stripHtmlArtifacts(htmlMatch[1].trim()),
   };
@@ -709,7 +720,7 @@ async function analyzeAndSave({ newsHeadlines, category, keywords }) {
   await sleep(AGENT_CALL_DELAY_MS);
 
   console.log('✍️  [2/3] 최종 블로그 포스팅 생성 중...');
-  const { title, summary, koreanStocks, htmlContent } = await generateFinalPost(model, agentDebate);
+  const { title, summary, koreanStocks, overallOpinion, htmlContent } = await generateFinalPost(model, agentDebate);
   console.log(`✅ 포스팅 생성 완료 — 제목: ${title}`);
 
   console.log('💾 [3/3] Google Sheets 저장 중...');
@@ -725,7 +736,7 @@ async function analyzeAndSave({ newsHeadlines, category, keywords }) {
   });
   console.log('✅ 시트 저장 완료');
 
-  return { agentDebate, finalPost: htmlContent, title, summary, koreanStocks, savedAt: today };
+  return { agentDebate, finalPost: htmlContent, title, summary, koreanStocks, overallOpinion, savedAt: today };
 }
 
 /**
