@@ -120,7 +120,7 @@ const AGENT_PROMPTS = {
 
 // Why: HTML 출력으로 전환 — 티스토리 직접 붙여넣기를 위해 마크다운 제거
 // [TITLE]/[SUMMARY]/[HTML] 구분자 방식 — HTML을 JSON에 임베드하면 이스케이프 오류가 빈번하므로 구분자 파싱 채택
-// 제목 전략: 날짜 제거, 국내 투자자 검색 키워드 앞배치 (SEO 유입 강화)
+// 제목 전략: [검색키워드] 명사형 핵심 이슈 요약 형식 — 코스피/나스닥 등 실제 검색어 15자 이내 배치, 클릭유도 수식어 금지 (SEO 유입 극대화)
 // 통합 포스팅: 미국 증시 + 코스피/코스닥 한 호흡으로 연결 (서학개미 + 국내 투자자 동시 공략)
 const COORDINATOR_PROMPT = `
 당신은 미국·한국 주식 시장을 모두 커버하는 전문 블로그 작가입니다.
@@ -142,12 +142,14 @@ const COORDINATOR_PROMPT = `
 [TITLE]
 (제목 1개. 규칙:
   ① 날짜(예: 2026.04.28, 4월 28일 등) 절대 포함 금지
-  ② 제목 맨 앞에 반드시 대괄호 키워드 배치 — 오늘 뉴스와 가장 직결된 것 선택:
-     [코스피 대응] / [삼성전자] / [SK하이닉스] / [엔비디아] / [나스닥] / [반도체주] / [코스닥]
-  ③ 이어서 유저의 궁금증·공포·탐욕을 자극하는 구어체 문구:
-     "왜 떨어졌나?" / "지금 사도 될까?" / "긴급 진단" / "폭락 전에 봐야 할" / "다음 목표가는?" / "지금 사면 늦었을까?"
-  ④ 이모지 1개 포함
-  예시: [삼성전자] 오늘 왜 급락했나? 반도체 긴급 진단 🔥 / [나스닥] 지금 사도 될까? 투자자 필수 체크 📊)
+  ② 형식: [메인 키워드] 핵심 이슈 요약 - 관련 종목/테마
+  ③ 제목 맨 앞 15자 이내에 아래 실제 검색 키워드 중 오늘 이슈와 가장 관련 있는 것 반드시 포함:
+     코스피 / 나스닥 / 삼성전자 / 엔비디아 / 환율 / 금리 / 반도체주 / 미국증시
+     대괄호 예시: [코스피 전망] / [나스닥 분석] / [삼성전자 전망] / [반도체주 이슈] / [미국증시 동향] / [환율 영향] / [금리 인하]
+  ④ 클릭 유도용 수식어 절대 금지: "서학개미 필독", "놀라운 신호", "지금 사도 될까?", "폭락 전에 봐야 할", "긴급 진단", "지금 사면 늦었을까?" 등
+     → 명사형 키워드 중심으로 핵심 이슈를 직접 서술할 것
+  ⑤ 좋은 예시: [코스피 전망] 삼성전자 엔비디아 쇼크 영향, 반도체주 대응 전략은? / [나스닥 분석] 금리 동결 이후 기술주 방향성과 국내 투자 전략 📊
+  ⑥ 나쁜 예시(금지): [삼성전자] 오늘 왜 급락했나? 반도체 긴급 진단 🔥 / [나스닥] 지금 사도 될까? 투자자 필수 체크 — 클릭 유도형 구어체 금지)
 [/TITLE]
 
 [SUMMARY]
@@ -165,7 +167,7 @@ const COORDINATOR_PROMPT = `
 
 [OVERALL_OPINION]
 (매크로 환경, 기술적 신호, 펀더멘털, 리스크 수준을 모두 반영한 오늘 시장의 최종 한 줄 평.
-8~15자 이내의 간결한 문구로 작성. 투자자가 직관적으로 판단할 수 있어야 함.
+20자 내외의 간결한 문구로 작성. 투자자가 직관적으로 판단할 수 있어야 함.
 예시: 낙관론 속 신중한 접근 필요 / 공포를 매수 기회로 삼아야 할 시점 / 추세 전환 신호, 관망 유지 / 단기 조정 후 재매수 기회
 따옴표·기호 없이 문구 텍스트만 출력)
 [/OVERALL_OPINION]
@@ -266,7 +268,7 @@ const COORDINATOR_PROMPT = `
 <tr style='background-color:#f8f9fa;font-weight:700;border-top:2px solid #2C3E50;'>
 <td style='padding:15px;text-align:center;'>🏆 <strong>종합</strong></td>
 <td style='padding:15px;' colspan='2'>
-<span style='font-size:1.1em;font-weight:bold;color:#d32f2f;'>오늘의 결론: (4인 에이전트 매크로·기술·펀더멘털·리스크 분석을 종합한 최종 한 줄 평. 예: 낙관론 속 신중한 접근 필요)</span><br>
+<span style='font-size:1.1em;font-weight:bold;color:#d32f2f;'>오늘의 결론: [OVERALL_OPINION] 블록의 최종 한 줄 평 그대로</span><br>
 <span style='color:#666;'>점수: ★★★☆☆ (X.X / 5.0)</span>
 </td>
 </tr>
@@ -300,7 +302,8 @@ const COORDINATOR_PROMPT = `
 - <hr>: 반드시 style='border:0;height:1px;background:#eee;margin:40px 0;'
 - 표 홀수 행 background:#fff, 짝수 행 background:#f9f9f9 교대 유지
 - 문체: 드라이하고 세련된 서술체. "투자자 여러분", "성공 투자 기원합니다" 등 상투적 표현 절대 금지
-- 제목 대괄호 키워드([코스피 대응], [삼성전자] 등) + 본문 내 삼성전자·코스피 언급 비중 높게 유지
+- 제목 대괄호 키워드는 실제 검색어 기반으로 작성 ([코스피 전망], [나스닥 분석], [반도체주 이슈] 등) + 본문 내 삼성전자·코스피 언급 비중 높게 유지
+- 종합 행 <span>오늘의 결론:</span> 셀은 코드가 [OVERALL_OPINION] 값을 자동 주입하므로 임의 문구 작성 불필요 — 반드시 "오늘의 결론:" 텍스트로 span 시작 유지
 - 총 텍스트 분량: 1000~1400자 (HTML 태그 제외 기준)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -514,13 +517,23 @@ function parseFinalPostResponse(rawText) {
     );
   }
 
+  const overallOpinion = overallOpinionMatch ? overallOpinionMatch[1].trim() : '';
+  // Why: stripHtmlArtifacts 후 [OVERALL_OPINION] 텍스트를 HTML 테이블 종합 행에 코드 레벨에서 직접 주입
+  //      Gemini가 HTML 내 플레이스홀더를 채우지 않는 버그를 방어하는 2차 보정
+  let htmlContent = stripHtmlArtifacts(htmlMatch[1].trim());
+  if (overallOpinion) {
+    htmlContent = htmlContent.replace(
+      /(<span[^>]*>오늘의 결론:\s*)[^<]*/,
+      `$1${overallOpinion}`
+    );
+  }
+
   return {
     title: titleMatch[1].trim(),
     summary: summaryMatch[1].trim(),
     koreanStocks: koreanStocksMatch ? koreanStocksMatch[1].trim() : '',
-    overallOpinion: overallOpinionMatch ? overallOpinionMatch[1].trim() : '',
-    // stripHtmlArtifacts: 마크다운 코드 펜스·외부 따옴표를 코드 레벨에서 2차 제거
-    htmlContent: stripHtmlArtifacts(htmlMatch[1].trim()),
+    overallOpinion,
+    htmlContent,
   };
 }
 
