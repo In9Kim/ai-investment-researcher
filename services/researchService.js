@@ -32,7 +32,7 @@ function getGeminiModel() {
   }
   const genAI = new GoogleGenerativeAI(apiKey);
   return genAI.getGenerativeModel(
-    { model: GEMINI_MODEL_NAME },
+    { model: GEMINI_MODEL_NAME, generationConfig: { maxOutputTokens: 8192 } },
     {
       apiVersion: 'v1',
       baseUrl: 'https://generativelanguage.googleapis.com',
@@ -131,6 +131,11 @@ const COORDINATOR_PROMPT = `
 - \`\`\`html, \`\`\`, 마크다운 기호 일체 절대 금지
 - [HTML] 블록 내용은 반드시 <div 로 시작하여 </div> 로 끝나는 순수 HTML만 출력
 - HTML을 감싸는 외부 따옴표, 설명 텍스트, 코드 블록 표시 절대 금지
+
+⚡ 출력 길이 제한 — 토큰 한도 초과 시 응답이 끊김:
+- 각 섹션 본문은 핵심 정보만 2~3문장으로 간결하게 (미사여구·수식어 생략)
+- HTML 내 <p> 태그는 1~2문장, <li> 항목은 한 줄 이내로 제한
+- 수치·종목명·등락률 중심의 짧고 명확한 문장 우선, 장황한 배경 설명 금지
 
 글의 시점: 오늘 저녁 작성 → 내일 아침 출근 전 투자자가 읽는 브리핑 형식.
 말투: 전문적이되 친근한 구어체 (~해요, ~이죠, ~거든요), 독자에게 직접 말하는 느낌으로.
@@ -501,26 +506,58 @@ function prepareForGoogleSheets(htmlContent) {
 }
 
 /**
+ * 구분자 태그 기반 섹션 단일 추출 (닫는 태그 잘림/누락 유연 처리)
+ * Why: Gemini 출력 토큰 한도 초과 시 [/TAG] 닫는 태그가 불완전하게 잘리거나 누락될 수 있음
+ *      - 1차: 완전한 닫는 태그 정확 매칭
+ *      - 2차: 다음 섹션 여는 태그 직전까지 슬라이싱 + 잘린 닫는 태그 정리
+ */
+function extractSection(tag, text) {
+  const strict = text.match(new RegExp(`\\[${tag}\\]([\\s\\S]*?)\\[\\/${tag}\\]`));
+  if (strict) return strict[1].trim();
+
+  const openIdx = text.indexOf(`[${tag}]`);
+  if (openIdx === -1) return null;
+
+  const contentStart = openIdx + tag.length + 2;
+  const remaining = text.slice(contentStart);
+  const nextTagMatch = remaining.match(/\[(?:TITLE|SUMMARY|KOREAN_STOCKS|OVERALL_OPINION|HTML)\]/);
+  const raw = nextTagMatch ? remaining.slice(0, nextTagMatch.index) : remaining;
+  // 잘린 닫는 태그([/TAG... 형태) 제거
+  return raw.replace(/\s*\[\/[A-Z_]*\]?\s*$/, '').trim() || null;
+}
+
+/**
  * Coordinator 응답에서 제목·요약·HTML 본문을 구분자 기반으로 파싱
- * Why: HTML을 JSON에 임베드하면 이스케이프 오류가 빈번 → [TITLE]/[SUMMARY]/[HTML] 구분자 방식 채택
+ * Why: HTML을 JSON에 임베드하면 이스케이프 오류가 빈번 → 구분자 방식 채택
+ *      응답 끊김 시 가능한 부분까지 적재하고 워크플로우를 중단하지 않음
  */
 function parseFinalPostResponse(rawText) {
-  const titleMatch = rawText.match(/\[TITLE\]([\s\S]*?)\[\/TITLE\]/);
-  const summaryMatch = rawText.match(/\[SUMMARY\]([\s\S]*?)\[\/SUMMARY\]/);
-  const koreanStocksMatch = rawText.match(/\[KOREAN_STOCKS\]([\s\S]*?)\[\/KOREAN_STOCKS\]/);
-  const overallOpinionMatch = rawText.match(/\[OVERALL_OPINION\]([\s\S]*?)\[\/OVERALL_OPINION\]/);
-  const htmlMatch = rawText.match(/\[HTML\]([\s\S]*?)\[\/HTML\]/);
+  const title = extractSection('TITLE', rawText);
+  const summary = extractSection('SUMMARY', rawText);
+  const koreanStocks = extractSection('KOREAN_STOCKS', rawText) ?? '';
+  const overallOpinion = extractSection('OVERALL_OPINION', rawText) ?? '';
+  const htmlRaw = extractSection('HTML', rawText);
 
-  if (!titleMatch || !summaryMatch || !htmlMatch) {
+  const missingParts = [];
+  if (!title) missingParts.push('TITLE');
+  if (!summary) missingParts.push('SUMMARY');
+  if (!htmlRaw) missingParts.push('HTML');
+
+  if (missingParts.length === 3) {
     throw new Error(
-      `포스팅 파싱 실패 — 응답에서 구분자([TITLE], [SUMMARY], [HTML])를 찾을 수 없음.\n응답 앞부분:\n${rawText.slice(0, 500)}`
+      `포스팅 파싱 실패 — 응답에서 구분자([TITLE], [SUMMARY], [HTML])를 전혀 찾을 수 없음.\n응답 앞부분:\n${rawText.slice(0, 500)}`
     );
   }
 
-  const overallOpinion = overallOpinionMatch ? overallOpinionMatch[1].trim() : '';
+  if (missingParts.length > 0) {
+    console.warn(
+      `⚠️ [파싱 부분 성공] 응답 끊김으로 인해 일부 내용만 저장되었습니다 — 누락 구분자: ${missingParts.join(', ')}`
+    );
+  }
+
   // Why: stripHtmlArtifacts 후 [OVERALL_OPINION] 텍스트를 HTML 테이블 종합 행에 코드 레벨에서 직접 주입
   //      Gemini가 HTML 내 플레이스홀더를 채우지 않는 버그를 방어하는 2차 보정
-  let htmlContent = stripHtmlArtifacts(htmlMatch[1].trim());
+  let htmlContent = stripHtmlArtifacts(htmlRaw ?? '<!-- 응답 끊김으로 HTML 생성 실패 -->');
   if (overallOpinion) {
     htmlContent = htmlContent.replace(
       /(<span[^>]*>오늘의 결론:\s*)[^<]*/,
@@ -529,9 +566,9 @@ function parseFinalPostResponse(rawText) {
   }
 
   return {
-    title: titleMatch[1].trim(),
-    summary: summaryMatch[1].trim(),
-    koreanStocks: koreanStocksMatch ? koreanStocksMatch[1].trim() : '',
+    title: title ?? '(응답 끊김 — 제목 생성 실패)',
+    summary: summary ?? '응답 끊김으로 인해 일부 내용만 저장되었습니다.',
+    koreanStocks,
     overallOpinion,
     htmlContent,
   };
